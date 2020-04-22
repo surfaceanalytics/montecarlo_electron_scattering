@@ -77,7 +77,7 @@ class Simulation():
         a Disc, with radius r and heigh h given in nanometers'''
         self.source = Disc(r,h)
         
-    def addScatterer(self, density, inel_xsect, el_xsect, el_angle, inel_angle):
+    def addScatterer(self, density, inel_xsect, el_xsect, Z):
         ''' The scatterer represents a medium containing atoms or molecules
         that can scatter electrons. The Scatterer has a density in atoms/nm^3,
         it has an inelastic and elastic scattering cross section factor.
@@ -89,7 +89,7 @@ class Simulation():
         spread function (ni radians).
         '''
         self.scatterer = Scatterer(density, inel_xsect, 
-                                   el_xsect, el_angle, inel_angle)
+                                   el_xsect, Z)
         self.scatterer.setXSect(self.initial_KE)
 
     def createElectron(self):

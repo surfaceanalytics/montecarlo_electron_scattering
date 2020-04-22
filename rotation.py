@@ -44,14 +44,15 @@ def rotate(vector, theta, phi): # Angles should be provided in radians
     v1 = np.dot(np.dot(R1,np.dot(R0, np.dot(v0,C))), C_inv)
     return v1 # this is the rotated vector in the original coordinate system
 
+#%%
 if __name__ == '__main__':
 
-    v0 = np.array([1,0,1])
+    v0 = np.array([0,0,1])
     
     theta = 30 /180 * np.pi
     phi = 10 / 180 * np.pi
     
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111, projection='3d')
     for phi in range(0,90,1):
         v1 = rotate(v0,theta,phi)
@@ -64,6 +65,7 @@ if __name__ == '__main__':
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')
     ax.set_zlabel('Z Label')
+    ax.view_init(0,90) 
     
     plt.show()
 

@@ -9,21 +9,26 @@ from random import random as rand
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.linalg
-import scipy.stats
-from numpy.random import standard_cauchy as cauchy
 from shapes import Sphere, Disc
-from poisson_distance import Poisson
 from generate_angle import AngleDist, Phi
-from rotation import length, rotate
-from metropolis import Metropolis
 
 #%%
 
 class Scatterer():
-    def __init__(self, density, inel_factor, el_factor, el_angle, inel_angle):
+    '''The Scatterer class represents the scattering medium (i.e. some
+    atoms, of a particular element, with a specified density).
+    The scattering medium can elastically scatter or inelastically scatter
+    an electron. Both processes are defined by the elastic and inelastic 
+    scattering cross sections.
+    The elastic and inelastic scattering processes each have scattering angle 
+    distributions. These are probablity distribution functions that generate
+    random angles according to the chosen AngleDist class.
+    '''
+    def __init__(self, density, inel_factor, el_factor, Z):
         self.inel_factor = inel_factor
         self.el_factor = el_factor
         self.density = density
+        self.Z = Z
         # stores the angular probability distributions for the two types of 
         # scattering event
         self.angle_dist = {'elastic':AngleDist(kind = 'Cauchy', width = 1), 

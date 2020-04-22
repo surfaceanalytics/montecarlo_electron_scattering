@@ -9,11 +9,18 @@ from random import random as rand
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.linalg
-import scipy.stats
-from numpy.random import standard_cauchy as cauchy
 #%%
 
 class Sphere():
+    ''' Sphere is a class that represents the simulation environment. Electrons
+    are generated form a 'source' shape inside of the sphere, and eventually 
+    intersect the sphere during the simulation.
+    The Sphere class has a method to generate x and y positions, given a z 
+    It has a method that checks if a point[x,y,z] is inside the sphere. This 
+    method returns a boolean.
+    It also has a method to return the intersection of a vector with the sphere.
+    The method takes a vector, that represents direction, as input, and returns
+    x,y,z as outputs, representing the intersection with the sphere.    '''
     def __init__(self,r):
         self.r = r
         
@@ -51,6 +58,16 @@ class Sphere():
         return intersection
             
 class Disc():
+    ''' The Disc class is used for the shape where electrons are generated and
+    where they are scattered. It is defined by the attributes r (radius in nm)
+    and h (height in nm).
+    It has a mothod to return a boolean, determining if a point is inside the
+    volums of the disc or not.
+    It has a method to return a random position from inside the volume of the 
+    disc.
+    It has a method that generates a random position from a slice inside of the
+    disc.
+    '''
     def __init__(self, r, h):
         self.r = r
         self.h = h
@@ -145,7 +162,7 @@ if __name__ == '__main__':
         xyz_int += [s.getIntersection([rand()-0.5,rand()-0.5,rand()-0.5])]
     xyz_int = np.array(xyz_int)
     
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111, projection='3d')
     xs = xyz_int[:,0]
     ys = xyz_int[:,1]
