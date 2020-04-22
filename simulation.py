@@ -99,12 +99,15 @@ class Simulation():
         time, n_times elastic and inelastically scattered) in an arrary called
         e.vector.
         '''
-        self.e = Electron(self.source)
+        self.e = Electron(self.source) # instantiate electron
         self.e.kinetic_energy = self.initial_KE # overwrite the default KE value
-        self.e.initCoords(self.depth, self.height)
-        self.e.initVelocity()
-        self.results = np.array([np.copy(self.e.vector)])
-        self.scatterer.setXSect(self.initial_KE)
+        self.e.initCoords(self.depth, self.height) # initialize random position
+        # for electron inside the source
+        self.e.initVelocity() # initialize a random velocity vector
+        self.results = np.array([np.copy(self.e.vector)]) # create place to
+        # keep the results
+        self.scatterer.setXSect(self.initial_KE) #change cross sections
+        # of the scatterer so that they correspond to the electron's KE
         
     def _step(self):
         ''' This function simulations one 'step' in the simulation of an 
@@ -121,10 +124,10 @@ class Simulation():
         # the velocity vector.
         velocity = self.e.vector[3:6]
         position = self.e.vector[0:3]
-        time = d / length(velocity)             #*** needs to be converted to nm / s
+        time = d / length(velocity)
 
         # Determine the new position
-        new_position = (position + (velocity * time)) #*** needs to be converted to nm / s
+        new_position = (position + (velocity * time)) 
         
         if self.source.inside(new_position):
             # Check if next potential scattering event is inside or outside
@@ -139,10 +142,12 @@ class Simulation():
             # Check the kind of scattering (elastic or inelastic) and increment 
             # the count accordingly
             if kind == 'elastic':
+                # increment the elastic scattering count
                 self.e.vector[8]+=1
             else:
+                # increment inelastic scattering count
                 self.e.vector[7]+=1
-                self.e.changeSpeed(self.scatterer.avg_loss)
+                self.e.changeSpeed(self.scatterer.getDeltaKE())
                 self.scatterer.setXSect(self.e.kinetic_energy)
             # Determine the new time
             self.e.vector[6] += time

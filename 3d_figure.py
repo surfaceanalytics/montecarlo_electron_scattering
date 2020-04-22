@@ -6,32 +6,25 @@ Created on Thu Apr 16 17:39:15 2020
 """
 from simulation import Simulation
 import numpy as np
-from random import random as rand
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import scipy.linalg
-import scipy.stats
-from numpy.random import standard_cauchy as cauchy
-from shapes import Sphere, Disc
-from poisson_distance import Poisson
 from generate_angle import AngleDist
-from rotation import length, rotate
-from scatterer import Scatterer
-from electron import Electron
-import pickle
-import time
-from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm
 from matplotlib import cm
 #%%
+'''
+This cell instantiates a Simulation object as sim.
+It then adds an electron source to the simulation, using the method addSource.
 
+'''
 sim = Simulation(5000) # argument is the radius of the spherical simulation evnrionment
 sim.addSource(2000,5000) # source is a shape that emits electrons
 # arguments are radius and thickness of a disc
-sim.addScatterer(59,6,10,1/180*np.pi,0/180*np.pi) # arguments are denstiy in atoms/nm^3
+sim.addScatterer(59,6,10,47) # arguments are denstiy in atoms/nm^3
 
-sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Cauchy', width = 1/180*np.pi), 
-                           'inelastic':AngleDist(kind = 'Cauchy', width = 50/180*np.pi)}
+sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Rutherford', Z = 47,
+                                                param = 0.1), 
+                           'inelastic':AngleDist(kind = 'Rutherford', Z = 47,
+                                                param = 0.000001)}
 # inel_factor, which determines the inelastic cross section
 # el_factor
 # inelastic angular spread in degrees, and elastic angular spread in degrees
@@ -94,7 +87,7 @@ ax.set_xticks([-xlim, 0, xlim])
 ax.set_yticks([-ylim, 0, ylim])
 ax.set_zticks([-zlim, 0, zlim])
 
-ax.view_init(30,45)    
+ax.view_init(0,90)    
 plt.show()
 
 

@@ -6,6 +6,7 @@ Created on Tue Apr  7 14:52:14 2020
 """
 import numpy as np
 from random import random as rand
+from random import choice as choice
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.linalg
@@ -38,6 +39,9 @@ class Scatterer():
         self.avg_loss = 10 # the average amount of kinetic energy lost per
         # inelastic scattering event (in eV)
         self.phi = Phi()
+        self.loss_fn = [[0.2,10],[0.8,12]] # this represents the loss function
+        # it is a list of lists. The elements of the sub-list are [probability
+        # energy loss, kinetic energy change in energy loss]
         
     def Scatter(self):
         ''' Determines whether elastic or inelastic scattering occurs.
@@ -70,4 +74,13 @@ class Scatterer():
         else:
             kind = 'elastic'
         return kind
- 
+    
+    def getDeltaKE(self):
+        c = choice(self.loss_fn)
+        r = rand()
+        if r < c[0]:
+            return c[1]
+        else:
+            return self.getDeltaKE()
+        
+
