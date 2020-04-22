@@ -121,10 +121,10 @@ class Simulation():
         # the velocity vector.
         velocity = self.e.vector[3:6]
         position = self.e.vector[0:3]
-        time = d / length(velocity)
+        time = d / length(velocity)             #*** needs to be converted to nm / s
 
         # Determine the new position
-        new_position = (position + (velocity * time))
+        new_position = (position + (velocity * time)) #*** needs to be converted to nm / s
         
         if self.source.inside(new_position):
             # Check if next potential scattering event is inside or outside
@@ -245,12 +245,6 @@ if __name__ == '__main__':
     sim.height = 1
 
 #%% 
-    sim.simulateMany(10, 'start finish')
-
-    rr = sim.start_finish    
-    r1 = rr[5]
-    r2 = rr[6]
-    r2 = np.pad(r2,(0,len(r1)-len(r2)), mode='edge')
 
 # very long calculation
 if __name__ == '__main__':

@@ -54,6 +54,9 @@ class Scatterer():
         self.total_xsect = self.inel_xsect + self.el_xsect
         
     def getDistance(self):
+        ''' Returns a random distance in nm based on an exponential distribution
+        from the total scattering cross section (in nm^2)
+        '''
         return -1/(self.total_xsect*self.density) * np.log(rand())
     
     def getKind(self):

@@ -94,11 +94,11 @@ class Disc():
 if __name__ == '__main__':
     d = Disc(5000,100)  
     d_xyz = []
-    for i in range(10000):
+    for i in range(100):
         d_xyz += [d.getSlicePosition(0.0001,0.01)]
     d_xyz = np.array(d_xyz) 
     d_xyz1 = []
-    for i in range(10000):
+    for i in range(100):
         d_xyz1 += [d.getSlicePosition(99.9,0.01)]
     d_xyz1 = np.array(d_xyz1)  
 
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     ax.set_zlabel('Z Label')
     
      
-    s = Sphere(5000)
+    s = Sphere(7000)
     s_xyz = []
     for z in np.arange(-s.r,s.r,s.r/4):
         s_xyz += s.xy(z)

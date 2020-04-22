@@ -46,7 +46,7 @@ def rotate(vector, theta, phi): # Angles should be provided in radians
 
 if __name__ == '__main__':
 
-    v0 = np.array([0,0,1])
+    v0 = np.array([1,0,1])
     
     theta = 30 /180 * np.pi
     phi = 10 / 180 * np.pi

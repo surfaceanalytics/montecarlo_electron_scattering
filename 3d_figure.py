@@ -4,7 +4,7 @@ Created on Thu Apr 16 17:39:15 2020
 
 @author: Mark
 """
-from environment import Simulation
+from simulation import Simulation
 import numpy as np
 from random import random as rand
 import matplotlib.pyplot as plt
@@ -39,35 +39,9 @@ sim.depth = 0
 sim.height = 75
 
 #%%
-# this is to check that the initial velocity directions are spherically distributed
-
-V = []
-for i in range(5000):
-    sim.createElectron()
-    V += [sim.e.vector]
-V = np.array(V)
-
-V[:,:3] = V[:,:3]*0
-
-fig = plt.figure(figsize=(6,6))
-ax = fig.gca(projection='3d')
-
-# Make the grid
-x, y, z = V[:,0], V[:,1], V[:,2]
-
-# Make the direction data for the arrows
-u, v, w = V[:,3], V[:,4], V[:,5]
-
-ax.quiver(x, y, z, u, v, w, length=0.05, normalize=True)
-
-plt.show()
-
-lengths = [length(i[3:6]) for i in V]
-
-#%%
 #This calculated the trajectories of j electrons, and keeps the entire path
 manysteps = []
-n_electrons = 500000
+n_electrons = 1000
 n_steps = 40
 for j in range(n_electrons):
     print(j)
@@ -92,9 +66,9 @@ colors = [ cm.plasma(x) for x in cm_subsection]
 #%%
 # This plots all the paths of the electrons
 fig = plt.figure(figsize=(10,10))
-xlim = 200
+xlim = 1000
 ylim = xlim
-zlim = 200
+zlim = 1000
 ax = fig.gca(projection='3d')
 xLabel = ax.set_xlabel('x distance', linespacing=3)
 yLabel = ax.set_ylabel('y distance', linespacing=3)
@@ -120,7 +94,7 @@ ax.set_xticks([-xlim, 0, xlim])
 ax.set_yticks([-ylim, 0, ylim])
 ax.set_zticks([-zlim, 0, zlim])
 
-ax.view_init(0, 90)    
+ax.view_init(30,45)    
 plt.show()
 
 
@@ -165,23 +139,6 @@ ax.set_zticks([-zlim, 0, zlim])
 ax.view_init(0, 90)    
 plt.show()
 
-
-#%%
-
-positive = 0
-above = []
-negative = 0
-below = []
-for i in manysteps:
-    if i[-1,2] > 0:
-        positive += 1
-        above += [i[-1]]
-    else:
-        negative += 1
-        below += [i[-1]]
-        
-above = np.array(above)
-below = np.array(below)
 
 #%%
 # This plots the intesection of the electrons that have been scattered n times

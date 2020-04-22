@@ -40,12 +40,11 @@ class Electron():
         self.phi = AngleDist(kind='Phi')
         
     def setSpeed(self, kinetic_energy):
-        ''' This function sets the speed of an electron (returned in m/s) using
-        kinetic energy as input (units of eV).
-        It uses the constants 1.602E-19 Joules per eV and 
-        the mass of the electron 9.109E-31 kg.
+        ''' This function sets the speed of an electron (returned in nm/s) 
+        using kinetic energy as input (units of eV). It uses the constants 
+        1.602E-19 Joules per eV and the mass of the electron 9.109E-31 kg.
         '''
-        self.initial_speed = np.sqrt(2 * kinetic_energy * 
+        self.initial_speed = 1E-9 * np.sqrt(2 * kinetic_energy * 
                                      1.602176E-19 / 9.109383E-31)
         
     def initCoords(self, depth, height):
@@ -75,7 +74,7 @@ class Electron():
         '''
         old_v = self.vector[3:6]
         new_KE = self.kinetic_energy - delta_KE
-        speed = np.sqrt(2 * new_KE * 
+        speed = 1E-9 * np.sqrt(2 * new_KE * 
                                      1.602176E-19 / 9.109383E-31)
         new_v = (old_v / np.sqrt(old_v[0]**2 + old_v[1]**2 + old_v[2]**2)
             * speed)
