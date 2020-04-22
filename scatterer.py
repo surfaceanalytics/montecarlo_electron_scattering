@@ -30,18 +30,19 @@ class Scatterer():
         self.el_factor = el_factor
         self.density = density
         self.Z = Z
+        self.loss_fn = [[0.2,10],[0.8,12]] # this represents the loss function
+        # it is a list of lists. The elements of the sub-list are [probability
+        # energy loss, kinetic energy change in energy loss]
+        
         # stores the angular probability distributions for the two types of 
         # scattering event
         self.angle_dist = {'elastic':AngleDist(kind = 'Cauchy', width = 1), 
                            'inelastic':AngleDist(kind = 'Constant')}
-        #self.angle_dist = {'elastic':AngleDist(kind = 'Constant'), 
-        #                   'inelastic':AngleDist(kind = 'Constant')}
+
         self.avg_loss = 10 # the average amount of kinetic energy lost per
         # inelastic scattering event (in eV)
         self.phi = Phi()
-        self.loss_fn = [[0.2,10],[0.8,12]] # this represents the loss function
-        # it is a list of lists. The elements of the sub-list are [probability
-        # energy loss, kinetic energy change in energy loss]
+
         
     def Scatter(self):
         ''' Determines whether elastic or inelastic scattering occurs.
@@ -76,6 +77,11 @@ class Scatterer():
         return kind
     
     def getDeltaKE(self):
+        ''' This method randomly selects an element from the loss_fn list.
+        Then it draws a random number. If the random number is less than the 
+        loss event's scattering probability, then the amount of energy loss is
+        returned (in eV).
+        '''
         c = choice(self.loss_fn)
         r = rand()
         if r < c[0]:
