@@ -31,16 +31,25 @@ class AngleDist():
             kind = kwargs['kind']
             if kind == 'Cauchy':
                 self.distribution = Cauchy(**kwargs)
+                self.kind = 'Cauchy'
             elif kind == 'Gaussian':
                 self.distribution = Gaussian(self.width)
+                self.kind = 'Gaussian'
             elif kind == 'Phi':
                 self.distribution = Phi()
+                self.kind = 'Phi'
             elif kind == 'Theta':
                 self.distribution = Theta()
+                self.kinf = 'Theta'
             elif kind == 'Constant':
                 self.distribution = Constant()
+                self.kind = 'Constant'
             elif kind == 'Rutherford':
                 self.distribution = Rutherford(**kwargs)
+                self.kind = 'Rutherford'
+            elif kind == 'Lambert':
+                self.distribution = Lambert()
+                self.kind = 'Lambert'
                     
     def getAngle(self, *args):
         return self.distribution.getAngle(*args)
@@ -130,6 +139,7 @@ class Rutherford:
         return angle
         
     def beta(self, energy, Z, param):
+        '''
         m = 9.10938E-31 # mass of electron in kg
         eV = 1.602176634E-19 # energy of 1 eV in J
         v = np.sqrt(2*eV*energy/m) # velocity of electron in m/s
@@ -137,8 +147,22 @@ class Rutherford:
         p = m*v # momentum in kg m/s
         lambda0 = Z**(1/3) / (0.885*a0)
         h = 6.62607E-34 # Planck constant in J s
-        beta = 1/4 * (param * h * lambda0 / p)
+        beta = 1/4 * (param * h * lambda0 / p)'''
+        beta = param * 5.43 * (Z**(2/3))/energy
+        
         return beta
+    
+class Lambert:
+    ''' This class represents a probability density function for Lambertian
+    emission.
+    '''
+    def __init__(self, **kwargs):
+        return
+
+    def getAngle(self):
+        r = rand()
+        angle = np.arccos(np.sqrt(1-r))
+        return angle
             
 #%%
         

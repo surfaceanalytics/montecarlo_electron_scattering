@@ -28,11 +28,14 @@ class Electron():
         self.mass = 9.109383E-31 # the electron mass in kg
         self.J_eV = 1.602176E-19 # conversion of eV to Joules. has units J/eV
         self.vector = np.zeros((9))
+        self.pathlength = 0 # This stores to total length the electron has
+        # travelled
         self.source = source
         self.kinetic_energy = 1000 # kinetic energy in eV
         self.setSpeed(self.kinetic_energy) 
         self.theta = AngleDist(kind='Theta')
         self.phi = AngleDist(kind='Phi')
+        self.lambert = AngleDist(kind='Lambert')
    
     def setSpeed(self, kinetic_energy):
         ''' This function sets the speed of an electron (returned in nm/s) 
@@ -53,7 +56,8 @@ class Electron():
         electron's speed, and generates random polar and azimuthal angles.
         Polar angle is theta, and asimuthal is phi.
         '''
-        theta = self.theta.getAngle()
+        #theta = self.theta.getAngle()
+        theta = self.lambert.getAngle()
         phi = self.phi.getAngle()
         vx = self.initial_speed * np.sin(theta) * np.cos(phi)
         vy = self.initial_speed * np.sin(theta) * np.sin(phi)

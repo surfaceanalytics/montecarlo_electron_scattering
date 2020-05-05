@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from generate_angle import AngleDist
 from matplotlib import cm
+import pickle
+
 #%%
 '''
 This cell instantiates a Simulation object as sim.
@@ -23,18 +25,17 @@ sim.addScatterer(59,6,10,47) # arguments are denstiy in atoms/nm^3
 
 sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Rutherford', Z = 47,
                                                 param = 0.1), 
-                           'inelastic':AngleDist(kind = 'Rutherford', Z = 47,
-                                                param = 0.000001)}
-# inel_factor, which determines the inelastic cross section
-# el_factor
-# inelastic angular spread in degrees, and elastic angular spread in degrees
+                           'inelastic':AngleDist(kind = 'Constant')}
+                           
+'''sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Constant'), 
+                           'inelastic':AngleDist(kind = 'Constant')}'''                                               
 sim.depth = 0
 sim.height = 75
 
 #%%
 #This calculated the trajectories of j electrons, and keeps the entire path
 manysteps = []
-n_electrons = 1000
+n_electrons = 500000
 n_steps = 40
 for j in range(n_electrons):
     print(j)
@@ -46,9 +47,9 @@ for j in range(n_electrons):
     steps = np.array(steps)
     manysteps += [np.copy(steps)]
 manysteps = np.array(manysteps)
+
 #%%
 #Set color map so that colors are mapped to number of times inelastically scattered
-
 max_z = np.max(manysteps[:,:,7])
 start = 0
 stop = 1
@@ -59,24 +60,20 @@ colors = [ cm.plasma(x) for x in cm_subsection]
 #%%
 # This plots all the paths of the electrons
 fig = plt.figure(figsize=(10,10))
-xlim = 1000
+xlim = 2000
 ylim = xlim
-zlim = 1000
+zlim = 2000
 ax = fig.gca(projection='3d')
 xLabel = ax.set_xlabel('x distance', linespacing=3)
 yLabel = ax.set_ylabel('y distance', linespacing=3)
 zLabel = ax.set_zlabel('z distance', linespacing=3)
 c = np.array([s[-1,7] for s in manysteps])
-for k in manysteps[:10000]:
+for k in manysteps[:1000]:
     V = k
     n_scatter = int(np.max(V[:,7])) # get number of times scattered
     color = colors[n_scatter]
     x, y, z = V[:,0], V[:,1], V[:,2]
     
-    # Make the direction data for the arrows
-    #u, v, w = V[:,3], V[:,4], V[:,5]
-    
-    #ax.quiver(x, y, z, u, v, w, length=0.1, normalize=True)
     ax.plot3D(x, y, z, c = color)
 
     ax.set_xlim3d(-xlim, xlim)
@@ -89,7 +86,6 @@ ax.set_zticks([-zlim, 0, zlim])
 
 ax.view_init(0,90)    
 plt.show()
-
 
 
 #%%
@@ -107,18 +103,12 @@ xLabel = ax.set_xlabel('x distance', linespacing=3)
 yLabel = ax.set_ylabel('y distance', linespacing=3)
 zLabel = ax.set_zlabel('z distance', linespacing=3)
 c = np.array([s[-1,7] for s in manysteps])
-for k in manysteps:
+for k in manysteps[:5000]:
     V = k
     n_scatter = int(np.max(V[:,7])) # get number of times scattered
     color = colors[n_scatter]
-    # Make the grid
     x, y, z = V[:,0], V[:,1], V[:,2]
     
-    # Make the direction data for the arrows
-    #u, v, w = V[:,3], V[:,4], V[:,5]
-    
-    #ax.quiver(x, y, z, u, v, w, length=0.1, normalize=True)
-    #ax.plot3D(x, y, z, c = color)
     ax.scatter3D(x[-1], y[-1], z[-1], c = color)
 
     ax.set_xlim3d(-xlim, xlim)
@@ -163,7 +153,7 @@ ax.set_xticks([-xlim, 0, xlim])
 ax.set_yticks([-ylim, 0, ylim])
 ax.set_zticks([-zlim, 0, zlim])
 
-ax.view_init(90, 90)    
+ax.view_init(0, 90)    
 plt.show()
 
 #%%
@@ -281,14 +271,14 @@ fig = plt.figure(figsize=(5,5))
 ax = fig.gca()
 
 all_distributions = []
-for n in range(7):
+for n in range(12):
     single_n = first_position[np.where(first_position[:,7] == n)]
     
     # find min and max z positions
     min_z = np.min(first_position[:,2])
     max_z = np.max(first_position[:,2])
     step_size = 0.5
-    steps = np.arange(-20,0,step_size)
+    steps = np.arange(-40,0,step_size)
     cts_depth = []
     
     for s in steps:
@@ -341,8 +331,6 @@ plt.show()
 def sphere_intersections(manysteps):
     # first pick only the electrons that hit the upper half of the sphere
     hitting_sphere = manysteps[np.where(manysteps[:,-1,2]>0)]
-    # then get the number of times these electrons were inelastically scattered
-    scatter_count = hitting_sphere[:,-1,7]
     # then get the final position and velocity of these electrons
     final = hitting_sphere[:,-1,[0,1,2,3,4,5,7]] 
     return final
@@ -355,17 +343,18 @@ def get_angle_dist(intersections, start = 0, stop = np.pi/2, step = np.pi/100, *
     
     velocities = intersections[:,3:6]
     speeds = np.linalg.norm(velocities,axis=1)
-    angles = np.array([np.arctan(velocities[:,1] / velocities[:,0]), np.arccos(velocities[:,2] / speeds)]).T
+    angles = np.array([np.arctan(velocities[:,1] 
+        / velocities[:,0]), np.arccos(velocities[:,2] / speeds)]).T
     angle_dist = []
     r = np.mean(speeds)
     for i in np.arange(start,stop, step):
         count = len(angles[np.where((angles[:,1] > i) & (angles[:,1] <= i + step))])
         area = 2*np.pi*(r**2)*(-np.cos(i + step)+np.cos(i))
-        angle_dist += [[i, count / (area/1E+13), count, area]]
+        angle_dist += [[i, count / (area/1E+32), count, area]]
     angle_dist = np.array(angle_dist)    
     return angle_dist
 
-angle_dist = get_angle_dist(manysteps, n_scatter = 6)
+angle_dist = get_angle_dist(sphere_intersections(manysteps))
 
 fig = plt.figure(figsize=(5,5))
 ax = fig.gca()
@@ -383,9 +372,28 @@ plt.show()
 
 fig = plt.figure(figsize=(5,5))
 ax = fig.gca()
-for i in range(0,7):
+for i in range(1,10):
     angle_dist = get_angle_dist(manysteps, n_scatter = i)
     ax.scatter(angle_dist[:,0], angle_dist[:,1])
 ax.set_xlabel('Counts / solid angle', linespacing=3)
 ax.set_ylabel('Polar Angle [radians]', linespacing=3)
 plt.show()
+
+
+
+#%%
+
+data = {'n_event_cufoff': sim.n_event_cutoff, 'boudary_radius':sim.boundary.r,
+        'source_radius':sim.source.r, 'source_height':sim.source.h,
+        'slice_thickness':sim.height, 'slice_start':sim.depth, 
+        'n_electron':500000, 'scatterer_density':sim.scatterer.density,
+        'inel_factor':sim.scatterer.inel_factor, 
+        'el_factor':sim.scatterer.el_factor,
+        'inel_angle_dist':{'kind':'Constant'},
+        'el_angle_dist':{'kind':'Constant'},
+        'loss_fn':sim.scatterer.loss_fn,'results':manysteps}
+
+filename = 'simulation_2_1'
+outfile = open(filename,'wb')
+pickle.dump(data,outfile)
+outfile.close()

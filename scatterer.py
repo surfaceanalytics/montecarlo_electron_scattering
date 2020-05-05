@@ -23,10 +23,12 @@ class Scatterer():
     scattering cross sections.
     The elastic and inelastic scattering processes each have scattering angle 
     distributions. These are probablity distribution functions that generate
-    random angles according to the chosen AngleDist class.
+    random angles according to the chosen AngleDist class.    
     '''
-    def __init__(self, density, inel_factor, el_factor, Z):
+    def __init__(self, density, inel_factor, inel_exp, el_factor,el_exp, Z):
         self.inel_factor = inel_factor
+        self.inel_exp = inel_exp
+        self.el_exp = el_exp
         self.el_factor = el_factor
         self.density = density
         self.Z = Z
@@ -59,8 +61,12 @@ class Scatterer():
         return kind, d, theta, phi
         
     def setXSect(self, KE):
-        self.inel_xsect = self.inel_factor / KE
-        self.el_xsect = self.el_factor / KE
+        ''' The cross sections are calculated from fits to the IMFP from
+        the QUASES software, which uses the TPPM2 equations.
+        The cross section is 1/(density * prefactor * kinetic_energy ^ factor)
+        '''
+        self.inel_xsect = self.inel_factor/(KE**self.inel_exp)
+        self.el_xsect = self.el_factor/(KE**self.el_exp)
         self.total_xsect = self.inel_xsect + self.el_xsect
         
     def getDistance(self):
