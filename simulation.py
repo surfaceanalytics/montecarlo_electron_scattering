@@ -19,7 +19,6 @@ from rotation import length, rotate
 from scatterer import Scatterer
 from electron import Electron
 import pickle
-import time
 
 #%%
 
@@ -60,7 +59,6 @@ class Simulation():
         This process is repeated for as many electrons as desired.
         '''
         self.boundary = Sphere(r)
-        #self.results = []
         self.intersections = []
         self.intersected = False
         self.acceptance_angle = 30 / 180 * np.pi
@@ -77,7 +75,10 @@ class Simulation():
         a Disc, with radius r and heigh h given in nanometers'''
         self.source = Disc(r,h)
         
-    def addScatterer(self, density, inel_xsect, el_xsect, Z):
+    def addScatteringMedium(self, shape):
+        self.scatteringMedium = shape
+        
+    def addScatterer(self, density, inel_factor, inel_exp, el_factor,el_exp, Z):
         ''' The scatterer represents a medium containing atoms or molecules
         that can scatter electrons. The Scatterer has a density in atoms/nm^3,
         it has an inelastic and elastic scattering cross section factor.
@@ -88,8 +89,8 @@ class Simulation():
         parameters el_angle and inel_angle represend the FWHM of the angular
         spread function (ni radians).
         '''
-        self.scatterer = Scatterer(density, inel_xsect, 
-                                   el_xsect, Z)
+        self.scatterer = Scatterer(density, inel_factor, inel_exp, 
+                                   el_factor,el_exp, Z)
         self.scatterer.setXSect(self.initial_KE)
 
     def createElectron(self):
@@ -124,15 +125,15 @@ class Simulation():
         # the velocity vector.
         velocity = self.e.vector[3:6]
         position = self.e.vector[0:3]
-        time = d / length(velocity)
+        time = d / np.linalg.norm(velocity)
 
         # Determine the new position
         new_position = (position + (velocity * time)) 
         
-        if self.source.inside(new_position):
+        if self.scatteringMedium.inside(new_position):
             # Check if next potential scattering event is inside or outside
-            # source. If it is outside, then the electron cannot be scattered
-            # and it must travel directly to the boundry.
+            # source. If it is still inside the scattering medium, then 
+            # the electron is scattered once again
             self.e.vector[0:3] = new_position
             # Determine the new velocity after scattering
             # The velocity vector needs to be transformed into a different
@@ -151,21 +152,31 @@ class Simulation():
                 self.scatterer.setXSect(self.e.kinetic_energy)
             # Determine the new time
             self.e.vector[6] += time
+            self.e.pathlength += d
+            
         else: 
             # This condition is run, if the electron's new position 
-            # is not inside the Source. Then the scattering event is rejected
-            # and the electron is projected onto the Sphere.
+            # is not inside the scattering medium. Then the scattering event 
+            # is rejected and the electron is projected onto the Sphere.
             
-            # First, get direction of travel of electron
-            direction = self.e.vector[3:6]
-            # Then find coordinates where it will intersect the boundary
-            intersect = self.findIntersect(position, direction)
+            # To determine path length within scattering medium
+            # first find the interesection with the surface of the scatterer
+            scat_inter = self.scatteringMedium.findIntersect(position, 
+                                                             velocity)
+            # Get the distance from intersection to previous position
+            d = np.linalg.norm(self.e.vector[:3] - scat_inter)
+            
+            # Append this distance to the pathlengths
+            self.e.pathlength += d
+            
+            # Then find coordinates where electron will intersect the boundary
+            intersect = self.boundary.findIntersect(position, velocity)
             # Set the electron's current position coordinates to intersection
             # coordinates
             self.e.vector[0:3] = intersect
             # Get new time
-            distance = length(intersect - position)
-            new_time = distance / length(velocity)
+            distance = np.linalg.norm(intersect - position)
+            new_time = distance / np.linalg.norm(velocity)
             self.e.vector[6] = new_time
             # Collect all intersected electrons into a list
             self.intersections += [list(self.e.vector)]
@@ -189,22 +200,7 @@ class Simulation():
             self.results = np.append(self.results, 
                                      np.array([np.copy(self.e.vector[:])]), 
                                      axis=0)
-        
-    def findIntersect(self, position, direction):
-        ''' This function uses current position vector and current veclociity
-        vector to determine where an electron with instersect the Boundary
-        sphere if it continues on its current path. the function returns
-        the coordinates of the intersection.
-        '''
-        v = direction / length(direction)
-        p = position
-        dot = np.dot(v,p)
-        d1 = -dot + np.sqrt(dot**2 - (length(p)**2 - self.boundary.r**2))
-        d2 = -dot - np.sqrt(dot**2 - (length(p)**2 - self.boundary.r**2))
-        d = np.max([d1,d2]) 
-        intersect = p + (v*d)
-        return intersect
-            
+                 
     def simulateMany(self, n, *args):
         ''' This function will run the simulation for many (n) electrons.
         The argument 'keep all' tells the programs to store all the calculated
@@ -217,6 +213,8 @@ class Simulation():
         attribute 'intersections'.
         '''
         if 'keep all' in args:
+            # this keeps all the intermediate positions and velocities of every
+            # electron
             self.all_paths = []
             for step in range(n):
                 self.Simulate()
@@ -224,15 +222,18 @@ class Simulation():
         elif 'start finish' in args:
             start = []
             finish = []
+            pathlengths = []
             for step in range(n):
+                print(step)
                 self.Simulate()
                 start += [np.copy(self.results[0])]
                 finish += [np.copy(self.results[-1])]
-            self.start_finish = np.array([start, finish])
+                pathlengths += [self.e.pathlength]
+            self.start_finish = [np.array(start), np.array(finish), np.array(pathlengths)]
         else:
             for step in range(n):
-                self.Simulate() # this keeps all the results 
-                # in the attribute self.intersections
+                self.Simulate() # this keeps the final positions, velocities
+                # and scatter count in the attribute called self.results
         self.intersections = np.array(self.intersections)
                 
         
@@ -240,46 +241,30 @@ class Simulation():
 if __name__ == '__main__':
     sim = Simulation(5000) 
     # argument is the radius of the spherical simulation evnrionment
-    sim.addSource(4999,5000) # source is a shape that emits electrons
+    sim.addSource(6000,6000) # source is a shape that emits electrons
     # arguments are radius and thickness (in nm) of a disc
-    sim.addScatterer(59,6,10,0.5/180*np.pi,0.5/180*np.pi) 
+    sim.addScatterer(59,6,10,47) 
     # arguments are denstiy in atoms/nm^3
     # inel_factor, which determines the inelastic cross section
     # el_factor, which determines the elastic cross section
-    # inelastic angular spread in radians, and elastic angular spread in radians
-    sim.height = 1
+    # and atomic number
+    sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Rutherford', 
+                                                    energy = sim.initial_KE,
+                                                    Z = sim.scatterer.Z,
+                                                    param = 0.1), 
+                           'inelastic':AngleDist(kind = 'Constant')}
+    
+    sim.height = 75
 
 #%% 
 
 # very long calculation
 if __name__ == '__main__':
 
-    start_time = time.time()
-    j = 0
-    for i in np.arange(0,100,1):
-        sim.depth = i
-        j += 1
-        print(j)
-        k = 0
-        while k < (1000): 
-            sim.Simulate()
-            k+=1
-    stop_time = time.time()
-    elapsed = stop_time - start_time
-#%%
+    sim.simulateMany(1000, 'start finish')
     
-    results = np.array(sim.results)
-    intersections = np.array(sim.intersections)
-    
-    angle = 90 / 180 * np.pi#sim.acceptance_angle
-    R = sim.boundary.r*np.sin(angle)
-    coll = np.array([i for i in intersections if 
-            ((np.sqrt((i[0])**2 + (i[1])**2)
-            <= R)
-            & (i[2] > 0))])
-    
-    print('el: ' + str(results[-1,8]))
-    print('inel: ' + str(results[-1,7]))
+    results = sim.start_finish
+
 
 #%% 
 # plot all intersections with the boundary
@@ -402,8 +387,4 @@ if __name__ == '__main__':
     pickle.dump(data,outfile)
     outfile.close()
     
-a = np.array([1,2,3,4,5,6,7,8])
-b = np.array([9,10,11,12,13,14,15,16])
-c = np.stack([a,b], axis = 0)
 
-aa = np.zeros([1,9])

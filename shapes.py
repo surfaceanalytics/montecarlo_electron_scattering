@@ -36,7 +36,12 @@ class Sphere():
             print('z not within sphere')
         return xyz
     
-    def inside(self, x,y,z):
+    def inside(self, position):
+        ''' This checks if a given point is inside of the shape
+        '''
+        x = position[0]
+        y = position[1]
+        z = position[2]
         inside = True
         if np.sqrt(x**2 + y**2 + z**2) > self.r:
             inside = False
@@ -45,6 +50,9 @@ class Sphere():
         return inside
     
     def getIntersection(self,vector):
+        ''' This finds the intersection point on the shape's surface for a 
+        vectors whose start point is at the center of the shape.
+        '''
         x = vector[0]
         y = vector[1]
         z = vector[2]
@@ -56,6 +64,20 @@ class Sphere():
         z_inter = z_norm * self.r
         intersection = np.array([x_inter,y_inter,z_inter])
         return intersection
+    
+    def findIntersect(self, position, direction):
+        ''' This function finds the intersection between a line and a shape's
+        surface. The line has a psition and a direction.The function returns
+        the coordinates of the intersection.
+        '''
+        v = direction / np.linalg.norm(direction)
+        p = position
+        dot = np.dot(v,p)
+        d1 = -dot + np.sqrt(dot**2-(np.linalg.norm(p)**2-self.r**2))
+        d2 = -dot - np.sqrt(dot**2-(np.linalg.norm(p)**2-self.r**2))
+        d = np.max([d1,d2]) 
+        intersect = p + (v*d)
+        return intersect
             
 class Disc():
     ''' The Disc class is used for the shape where electrons are generated and
@@ -73,6 +95,8 @@ class Disc():
         self.h = h
         
     def inside(self, position):
+        ''' This checks if a given point is inside of the shape
+        '''
         x = position[0]
         y = position[1]
         z = position[2]
@@ -86,6 +110,8 @@ class Disc():
         return inside
     
     def getRandPosition(self):
+        ''' This returns a random position inside the disc
+        '''
         theta = rand()*2*np.pi - np.pi
         r = rand() * self.r
         x = r * np.cos(theta)
@@ -105,12 +131,67 @@ class Disc():
         y = r * np.sin(theta)
         z = rand()*(-height) - depth
         return np.array([x,y,z])
+    
+    def findIntersect(self, position, direction):
+        ''' This finds the intersection point between a line, characterized by
+        a position and a direction, and a disc.
+        '''
+        v = direction / np.linalg.norm(direction)
+        p = position
+        ''' First find if where the line intersects the circle, i.e. the 
+        projection of the cylinder along its axis.
+        '''
+        t1 = (1/(v[1]**2 + v[0]**2) 
+            * (-v[1]*p[1] - v[0]*p[0] 
+                + np.sqrt(self.r**2*(v[1]**2+v[0]**2) 
+                    - (v[1]*p[0])**2 + (2*v[1]*v[0]*p[1]*p[0])
+                    - (v[0]*p[1])**2)))
+        t2 = (-1/(v[1]**2 + v[0]**2) 
+            * (v[1]*p[1] + v[0]*p[0] 
+                + np.sqrt(self.r**2*(v[1]**2+v[0]**2) 
+                    - (v[1]*p[0])**2 + (2*v[1]*v[0]*p[1]*p[0])
+                    - (v[0]*p[1])**2)))
+        ''' Pick the t that is positive, because we want only the intersection
+        in the direction the particle is traveling
+        '''
+        t = max(t1,t2) 
+        new_p = p + t*v
+        ''' Then check if the particle is intersecting the caps of the disc
+        '''
+        if (new_p[2] > 0):
+            t = -p[2]/v[2]
+            new_p = p + t*v
+        elif (new_p[2] < (0-self.h)):
+            t = (-self.h - p[2]) / v[2]
+            new_p = p + t*v        
+        intersect = new_p
+        return intersect
 
 #%%
         
 if __name__ == '__main__':
     d = Disc(5000,100)  
     d_xyz = []
+    for i in range(500):
+        p = d.findIntersect(d.getRandPosition(),[rand(),rand(),rand()])
+        d_xyz += [p]
+    d_xyz = np.array(d_xyz)
+    
+    
+    fig = plt.figure(figsize = (6,6))
+    ax = fig.add_subplot(111, projection='3d')
+    xs = d_xyz[:,0]
+    ys = d_xyz[:,1]
+    zs = d_xyz[:,2]
+    ax.scatter(xs, ys, zs)
+    
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    
+    
+    #%%
+    
     for i in range(100):
         d_xyz += [d.getSlicePosition(0.0001,0.01)]
     d_xyz = np.array(d_xyz) 
