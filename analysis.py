@@ -51,6 +51,8 @@ class Analysis:
         pathlengths = self.results[2][np.where(self.results[1][:,7]
                                         <max_events)]
     
+        # This condition restricts the counted electrons to those within a 
+        # certain acceptance angle
         if 'accept_angle' in kwargs.keys():
             acceptance_angle = kwargs['accept_angle'][0] #degrees
             radius = kwargs['accept_angle'][1] * np.sin(acceptance_angle / 
@@ -87,6 +89,9 @@ class Analysis:
         self.profiles = profiles
     
     def areasUnderProfiles(self, *args):
+        ''' This plots the total ares under the
+        '''
+        
         areas = {}
         for k,v in self.profiles.items():
             areas[k] = np.sum(v['counts'])
@@ -99,140 +104,54 @@ class Analysis:
             ax.set_ylabel('Electron count', linespacing=3)
             plt.show()
             
+    def plotStartFinish(self, x_lim=800000, n_electrons=500, **kwargs):
+        hitting_sphere = self.results[1]
         
+        if 'accept_angle' in kwargs.keys():
+            acceptance_angle = kwargs['accept_angle'][0] #degrees
+            sim_radius = kwargs['accept_angle'][1]
+            radius = sim_radius * np.sin(acceptance_angle / 180 * np.pi)
+            acceptance = np.array([i for i in hitting_sphere 
+                                   if (((i[0]**2 + i[1]**2)
+                                   < (radius)**2)
+                                    & (i[2] > 0))])
+        
+        else:
+            acceptance = hitting_sphere
+        
+        if n_electrons > len(acceptance):
+            n_electrons = len(acceptance)
+        
+        fig = plt.figure(figsize=(10,10))
+        xlim = x_lim
+        ylim = xlim
+        zlim = xlim
+        ax = fig.gca(projection='3d')
+        ax.set_xlabel('x distance', linespacing=3)
+        ax.set_ylabel('y distance', linespacing=3)
+        ax.set_zlabel('z distance', linespacing=3)
+        for l, k in enumerate(acceptance[:n_electrons]):
+            V = k
+            x, y, z = V[0], V[1], V[2]
+    
+            ax.scatter3D(x, y, z, c='blue')
+        
+        for l,k in enumerate(self.results[0][:n_electrons]):
+            V = k
+            x, y, z = V[0], V[1], V[2]
+    
+            ax.scatter3D(x, y, z, c='orange')
             
-#%%
-if __name__ == '__main__':
-    sim = Simulation(800000) 
-    # argument is the radius of the spherical simulation evnrionment
-    sim.addSource(100000,5000) # source is a shape that emits electrons
-    # arguments are radius and thickness (in nm) of a disc
-    sim.addScatteringMedium(Sphere(800000))
-    sim.addScatterer(9.66E-5,0.527,0.85,0.5,1.01,4) 
-    # arguments are denstiy in atoms/nm^3
-    # inel_factor, and inel_exp which determines the inelastic cross section
-    # from a fit to TPP2M and NIST data using sigma = facter / (KE * exp)
-    # el_factor, which determines the elastic cross section
-    # and atomic number
-    sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Rutherford', 
-                                                    energy = sim.initial_KE,
-                                                    Z = sim.scatterer.Z,
-                                                    param = 0.06), 
-                           'inelastic':AngleDist(kind = 'Constant')}
-    #set the high of the source slice
-    sim.height = 1
-
-#%% 
-
-# potentially very long calculation
-if __name__ == '__main__':
-
-    sim.simulateMany(100000, 'start finish')
-    results = sim.start_finish
-
-#%%
-if __name__ == '__main__':
-    A = Analysis(results)
-    A.pathHistogram('show',bins=25)        
-    A.areasUnderProfiles('show')
-
-    
+        ax.set_xlim3d(-xlim, xlim)
+        ax.set_ylim3d(-ylim,ylim)
+        ax.set_zlim3d(-100000,zlim)
         
-    #%%
-    # This plots the average number of times being inelastically scattered versus
-    # depth
-    # first pick only the electrons that hit the upper half of the sphere
-    hitting_sphere = manysteps[np.where(manysteps[:,-1,2]>0)]
-    # then get the number of times these electrons were inelastically scattered
-    scatter_count = hitting_sphere[:,-1,7]
-    # then get the initial position of these electrons
-    first_position = hitting_sphere[:,0,:] 
-    
-    # change scatter count column 
-    first_position[:,7] = scatter_count
-    
-    # find min and max z positions
-    min_z = np.min(first_position[:,2])
-    max_z = np.max(first_position[:,2])
-    step_size = 0.5
-    steps = np.arange(-50,0,step_size)
-    avg_depth = []
-    cts_depth = []
-    
-    for s in steps:
-        avg = np.mean(first_position[np.where((first_position[:,2] < s + step_size)
-        &(first_position[:,2] >= s)),7])
-        cts = len((first_position[np.where((first_position[:,2] < s + step_size)
-        &(first_position[:,2] >= s)),7][0,:]))
-        avg_depth += [[s,avg]]
-        cts_depth += [[s,cts]]
-    avg_depth = np.array(avg_depth)
-    cts_depth = np.array(cts_depth)
-    
-    # this figure shows the number of times inelastically scattered versus the
-    # average depth below the surface for electrons being scattered that many times
-    fig = plt.figure(figsize=(5,5))
-    ax = fig.gca()
-    ax.plot(avg_depth[:,0], avg_depth[:,1])
-    ax.set_xlabel('Depth [nm]', linespacing=3)
-    ax.set_ylabel('Number of times inelastically scattered', linespacing=3)
-    plt.show()
-    
-    # This plot shows the number of electrons reaching the boundary versus depth
-    fig = plt.figure(figsize=(5,5))
-    ax = fig.gca()
-    ax.plot(cts_depth[:,0], cts_depth[:,1])
-    ax.set_xlabel('Depth [nm]', linespacing=3)
-    ax.set_ylabel('Number of electrons reaching boundary', linespacing=3)
-    plt.show()
-    
-    
-    
-    #%%
-    # this shows the number of electrons reachng the boundary versus depth for 
-    # a given number of scattering events
-    # the plots should have a Poisson distribution
-    
-    # first pick only the electrons that hit the upper half of the sphere
-    hitting_sphere = manysteps[np.where(manysteps[:,-1,2]>0)]
-    # then get the number of times these electrons were inelastically scattered
-    scatter_count = hitting_sphere[:,-1,7]
-    # then get the initial position of these electrons
-    first_position = hitting_sphere[:,0,:] 
-    
-    # change scatter count 
-    first_position[:,7] = scatter_count
-    
-    # This plots shows the number of electrons reaching the boundary for a given 
-    # n. The plots should follow the Poisson distribution
-    fig = plt.figure(figsize=(5,5))
-    ax = fig.gca()
-    
-    all_distributions = []
-    for n in range(12):
-        single_n = first_position[np.where(first_position[:,7] == n)]
+        ax.set_xticks([-xlim, 0, xlim])
+        ax.set_yticks([-ylim, 0, ylim])
+        ax.set_zticks([-zlim, 0, zlim])
         
-        # find min and max z positions
-        min_z = np.min(first_position[:,2])
-        max_z = np.max(first_position[:,2])
-        step_size = 0.5
-        steps = np.arange(-40,0,step_size)
-        cts_depth = []
-        
-        for s in steps:
-            cts = len((single_n[np.where((single_n[:,2] < s + step_size)
-            &(single_n[:,2] >= s)),7][0,:]))
-            cts_depth += [[s,cts]]
-        cts_depth = np.array(cts_depth)
-        all_distributions +=[cts_depth[:,1]]
-    
-        
-        ax.plot(cts_depth[:,0], cts_depth[:,1])
-    
-    ax.set_xlabel('Depth [nm]', linespacing=3)
-    ax.set_ylabel('Number of electrons reaching boundary', linespacing=3)
-    plt.show()
-    
-    all_distributions = np.array(all_distributions).T
-    
-    sums = np.sum(all_distributions, axis=0)
+        ax.view_init(10, 90)    
+        plt.show()
+            
+
+
