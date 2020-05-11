@@ -135,7 +135,8 @@ class Rutherford:
 
     def getAngle(self):
         r = rand()
-        angle = np.arccos(1-(2*self.beta*r/(1+self.beta - r)))
+        #angle = np.arccos(1-(2*self.beta*r/(1+self.beta - r)))
+        angle = np.arccos((-1-self.beta+r+2*self.beta*r)/(-1-self.beta+r))
         return angle
         
     def beta(self, energy, Z, param):
@@ -149,7 +150,6 @@ class Rutherford:
         h = 6.62607E-34 # Planck constant in J s
         beta = 1/4 * (param * h * lambda0 / p)'''
         beta = param * 5.43 * (Z**(2/3))/energy
-        
         return beta
     
 class Lambert:

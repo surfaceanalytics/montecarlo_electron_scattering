@@ -26,15 +26,15 @@ def Ruth(Z,E,theta, param):
                             2 * beta)**2)
     return y
 Z = 47
-E = 400
-p = 0.9
+E = 1400
+p = 1
 ruth = [Ruth(Z,E,i,p) for i in np.arange(0,np.pi,0.01)]
 theta = [i for i in np.arange(0,np.pi,0.01)]
-a = AngleDist(kind = "Rutherford", energy = 400, Z=47, param=0.9)
+a = AngleDist(kind = "Rutherford", energy = 1400, Z=47, param=2)
 
 aa = []
 
-for i in range(100000):
+for i in range(200000):
     aa+= [a.getAngle()]
 
 
@@ -42,7 +42,7 @@ h = np.histogram(aa, bins=100)
 r = h[1][:-1]
 h1 = [h[0][i]/np.sin(r[i]) for i in range(len(r))]
 
-plt.plot(r[1:],h1[1:]/max(h1[1:]))
+plt.plot(r[2:],h1[2:]/max(h1[2:]))
 plt.plot(theta,ruth/max(ruth))
 
 

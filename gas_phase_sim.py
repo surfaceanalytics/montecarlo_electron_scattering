@@ -18,22 +18,29 @@ from analysis import Analysis
 if __name__ == '__main__':
     sim_radius = 800000
     sim = Simulation(sim_radius) 
+    d = sim.densityFromP(10) # this gets the density in atoms/nm^3 from pressure
     # argument is the radius of the spherical simulation evnrionment
     sim.initial_KE = 1100
     sim.addSource(400000,1) # source is a shape that emits electrons
     # arguments are radius and thickness (in nm) of a disc
     sim.addScatteringMedium(Sphere(sim_radius))
-    sim.addScatterer(9.66E-5,0.527,0.85,0.5,1.01,4) 
+    sim.addScatterer(d,0.4,0.85,0.95,1.12,4) 
     # arguments are denstiy in atoms/nm^3
     # inel_factor, and inel_exp which determines the inelastic cross section
     # from a fit to TPP2M and NIST data using sigma = facter / (KE * exp)
     # el_factor, which determines the elastic cross section
     # and atomic number
+    
     sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Rutherford', 
                                                     energy = sim.initial_KE,
                                                     Z = sim.scatterer.Z,
                                                     param = 0.9), 
                            'inelastic':AngleDist(kind = 'Constant')}
+    
+    
+    '''
+    sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Constant'), 
+                           'inelastic':AngleDist(kind = 'Constant')}'''
     #set the high of the source slice
     sim.height = 1
 
@@ -42,7 +49,7 @@ if __name__ == '__main__':
 # potentially very long calculation
 if __name__ == '__main__':
 
-    sim.simulateMany(30000, 'start finish')
+    sim.simulateMany(200000, 'start finish')
     results = sim.start_finish
 
 #%%
@@ -55,7 +62,7 @@ if __name__ == '__main__':
     # bins in the histogram, x_limits is a tuple that defines the limits of
     # the plot, accept_angle takes a tuple, where the first position is angle
     # and the second is the radius of the simulation boundary
-    A.pathHistogram('show',bins=25, x_limits=(700000,900000), accept_angle =
+    A.pathHistogram('show',bins=25, x_limits=(600000,1100000), accept_angle =
                     (30,800000))
 
     # Then get the areas under the histogram profiles. This is the same as 

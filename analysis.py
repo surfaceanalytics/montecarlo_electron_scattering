@@ -36,12 +36,14 @@ class Analysis:
         argument 'x_limits' with a tuple (x_min, x_max) to adjust the axis
         limits
         
-        To limite the electrons the the ones that have interesected the
-        boundary within a desired acceptance angle, provide the keayword arg
+        To limit the electrons the the ones that have interesected the
+        boundary within a desired acceptance angle, provide the keyword arg
         'accept_angle' = (angle, radius), where angle should be in degrees
         and radius represents the radius of the boundary sphere.
         '''
         max_events = max(self.results[1][:,7])
+        if max_events == 0:
+            max_events = 1
         hitting_sphere = self.results[1][np.where(self.results[1][:,7]
                                         <max_events)]
         # get a list of the number times an electron was inelastically 
@@ -69,7 +71,7 @@ class Analysis:
                             & (self.results[1][i][2] > 0))])
 
         profiles = {}
-        for i in range(int(max(inel_count))):
+        for i in range(int(max(inel_count))+1):
             hist = np.histogram(pathlengths[np.where(inel_count == i)], 
                                             bins=100)
             profiles[i] = {'counts':hist[0], 'pathlength':hist[1][:-1]}
@@ -99,7 +101,7 @@ class Analysis:
         if 'show' in args:
             fig = plt.figure(figsize=(5,5))
             ax = fig.gca()
-            ax.plot(list(areas.keys()),list(areas.values()))
+            ax.scatter(list(areas.keys()),list(areas.values()))
             ax.set_xlabel('Number of times inelastically scattered', linespacing=3)
             ax.set_ylabel('Electron count', linespacing=3)
             plt.show()

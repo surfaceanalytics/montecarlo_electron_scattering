@@ -235,6 +235,11 @@ class Simulation():
                 self.Simulate() # this keeps the final positions, velocities
                 # and scatter count in the attribute called self.results
         self.intersections = np.array(self.intersections)
+        
+    def densityFromP(self, P, T=300): # provide P in mbar
+        R = 138 # in units of nm^3/mbar/K/atom
+        density = P / (T * R)
+        return density #returned in atoms / nm^3
                 
         
 #%%
