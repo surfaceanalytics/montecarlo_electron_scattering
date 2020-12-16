@@ -110,9 +110,9 @@ class gasPhaseSimulation(Simulation):
 if __name__ == '__main__':
     loss_function = 'He_loss_fn_medium.csv'
     #loss_function=[[10],[0.5]]
-    sim = gasPhaseSimulation(sample_nozzle_distance = 300000,
-                          pressure = 25,
-                          source_diameter = 300000,
+    sim = gasPhaseSimulation(sample_nozzle_distance = 500000,
+                          pressure = 13,
+                          source_diameter = 900000,
                           initial_KE = 1100,
                           loss_function = loss_function) 
     sim.simulateMany(10000, 'start finish')
@@ -122,7 +122,7 @@ if __name__ == '__main__':
 if __name__ == '__main__':
     # First create an Analysis object, and pass the results to it
     A = Analysis(results, parameters = sim.parameters)
-    nozzle_diameter = 300000    
+    nozzle_diameter = 600000    
     
     # Then create a histogram of path lengths. There is one histogram for 
     # for each n, where n is the number of times inelastically scattered
@@ -130,7 +130,7 @@ if __name__ == '__main__':
     # bins in the histogram, x_limits is a tuple that defines the limits of
     # the plot, accept_angle takes a tuple, where the first position is angle
     # and the second is the radius of the simulation boundary
-    A.pathHistogram('show', bins=200, x_limits=(290000,350000), accept_angle=90, nozzle_diameter=nozzle_diameter)
+    A.pathHistogram('show', bins=200, x_limits=(290000,350000), accept_angle=30, nozzle_diameter=nozzle_diameter)
 
     # Then get the areas under the histogram profiles. This is the same as 
     # counting the number of electrons that have been scatterded n times.        
@@ -154,15 +154,23 @@ if __name__ == '__main__':
     
     #%%
     averages = {}
+    count = 0
     for r in range(25000,1000000,25000):
-        nozzle_diameter = 300000
+        print(count)
+        nozzle_diameter = 1000000
         nozzle_radius = nozzle_diameter / 2
-        sim = gasPhaseSimulation(sample_nozzle_distance = r, source_diameter = 300000, pressure=200)
-        sim.simulateMany(30000, 'start finish')
+        sim = gasPhaseSimulation(sample_nozzle_distance = r, source_diameter = 300000, pressure=10)
+        sim.simulateMany(40000, 'start finish')
         results = sim.start_finish
         A = Analysis(results)
         A.pathHistogram('show',bins=25, accept_angle = 20, accept_radius = nozzle_radius)
         averages[r] = A.getAveragePathLength()
+        count+=1
+        
+    norm_path = [v/k for k,v in averages.items()]
+    
+    plt.plot([k for k in averages.keys()], norm_path)
+        
         
         
         

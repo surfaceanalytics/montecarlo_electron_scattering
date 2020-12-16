@@ -7,6 +7,7 @@ Created on Mon Dec 14 17:13:41 2020
 from gas_phase_sim import gasPhaseSimulation
 from analysis import Analysis
 import numpy as np
+import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
@@ -87,3 +88,12 @@ if __name__ == '__main__':
 
     little_x = np.array([[30, 0.1,13, 0.600000,0.200000]])
     avg_predict = model.predict(little_x)[0] * 200000
+    
+    trend = []
+    for i in range(10):
+        z = i / 10
+        x = np.array([[22, 1,13, 1,z]])
+        avg_predict = model.predict(x)[0]
+        trend += [avg_predict]
+    
+    plt.plot(trend)        
