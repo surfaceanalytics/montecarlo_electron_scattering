@@ -9,11 +9,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from shapes import Disc
 from generate_angle import AngleDist
+from source import Source
+from numpy.random import random as rand
+
 
 #%%
 
 class Electron():
-    def __init__(self, source):
+    def __init__(self, source, **kwargs):
         ''' The Electron class represents an electron in the simultation. Its
         main properties are stored inside the attribute called 'vector'.
         Vector is an array to store all the electron's info.
@@ -31,40 +34,53 @@ class Electron():
         self.pathlength = 0 # This stores to total length the electron has
         # travelled
         self.source = source
-        self.kinetic_energy = 1000 # kinetic energy in eV
-        self.setSpeed(self.kinetic_energy) 
-        self.theta = AngleDist(kind='Theta')
-        self.phi = AngleDist(kind='Phi')
-        self.lambert = AngleDist(kind='Lambert')
-   
-    def setSpeed(self, kinetic_energy):
+        #self.kinetic_energy = self.source.getKE()
+        self.theta = self.source.theta
+        self.phi = self.source.phi
+        self.initCoords()
+        self.initVelocity()
+
+    def _convertKinEnToSpeed(self, kinetic_energy):
         ''' This function sets the speed of an electron (returned in nm/s) 
         using kinetic energy as input (units of eV). It uses the constants 
         1.602E-19 Joules per eV and the mass of the electron 9.109E-31 kg.
         '''
-        self.initial_speed = 1E+9 * np.sqrt(2 * kinetic_energy * 
+        speed = 1E+9 * np.sqrt(2 * kinetic_energy * 
                                      self.J_eV / self.mass)
+        return speed
         
-    def initCoords(self, depth, height):
-        ''' This function gets random x,y,z corrdinates from a slice
+    def initCoords(self, *args):
+        ''' This function gets random x,y,z coordinates from a slice
         of the Source disc. 
         '''
-        self.vector[0:3] = self.source.getSlicePosition(depth, height)
+        self.vector[0:3] = self.source.getRandPosition()
+        #self.vector[0:3] = self.source.getSlicePosition(*args)
         
     def initVelocity(self):
         ''' This  function initializes the electron's velocity. It uses the 
         electron's speed, and generates random polar and azimuthal angles.
         Polar angle is theta, and asimuthal is phi.
         '''
-        #theta = self.theta.getAngle()
-        theta = self.lambert.getAngle()
+        
+        KE = self.source.getKE()
+        self.kinetic_energy = KE
+        initial_speed = self._convertKinEnToSpeed(KE)
+        theta = self.theta.getAngle()
         phi = self.phi.getAngle()
-        vx = self.initial_speed * np.sin(theta) * np.cos(phi)
-        vy = self.initial_speed * np.sin(theta) * np.sin(phi)
-        vz = self.initial_speed * np.cos(theta)
+        vx = initial_speed * np.sin(theta) * np.cos(phi)
+        vy = initial_speed * np.sin(theta) * np.sin(phi)
+        vz = initial_speed * np.cos(theta)
         self.vector[3:6] = np.array([vx,vy,vz])
         
-    def changeSpeed(self, delta_KE):
+    def updateKineticEnergy(self, delta_KE):
+        new_KE = self.kineticEnergy() - delta_KE
+        if new_KE < 0:
+            self.kinetic_energy = 0
+        else:
+            self.kinetic_energy = new_KE
+        self.changeSpeed()
+        
+    def changeSpeed(self):
         ''' This fuction is used to change the electron's speed when an
         inelastic scattering event occurs. It takes the argument delta_KE,
         which represents the absolute value of kinetic energy the electron lost
@@ -72,11 +88,12 @@ class Electron():
         of m/s.
         '''
         old_v = self.vector[3:6]
-        new_KE = self.kinetic_energy - delta_KE
-        speed = 1E+9 * np.sqrt(2 * new_KE * 
+  
+        speed = 1E+9 * np.sqrt(2 * self.kinetic_energy * 
                                      self.J_eV / self.mass)
         new_v = (old_v / np.sqrt(old_v[0]**2 + old_v[1]**2 + old_v[2]**2)
             * speed)
+     
         self.vector[3:6] = new_v
         
     def kineticEnergy(self):
@@ -92,6 +109,7 @@ class Electron():
 ''' This is to check the initial velocity distributions of the generated 
 electrons.
 '''
+
 if __name__ == '__main__':
     source = Disc(100,1)
     vals = []

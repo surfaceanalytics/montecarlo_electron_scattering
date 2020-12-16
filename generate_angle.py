@@ -97,7 +97,7 @@ class Theta:
         return np.arccos(1-2*rand())# rand() * np.pi
 
 class Constant:
-    ''' This clas srepresents an angular distribution, where the angle does 
+    ''' This class represents an angular distribution, where the angle does 
     not change
     '''
     def __init__(self):

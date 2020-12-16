@@ -13,73 +13,100 @@ import scipy.linalg
 import scipy.stats
 from numpy.random import standard_cauchy as cauchy
 from shapes import Sphere, Disc
-from poisson_distance import Poisson
 from generate_angle import AngleDist
 from rotation import length, rotate
 from scatterer import Scatterer
 from electron import Electron
+from source import Source
 import pickle
 
 #%%
 
 class Simulation():
-    def __init__(self, r):
-        ''' The simulation class is for running a Monte Carlo simulation of 
-        many electrons travelling through a scattering medium. The simulation
-        is run inside a 3D volume, called the Boundary (it is a sphere). 
-        The scattering medium, and the source of the electrons is a volume
-        called the Source (it is a cylinder at the center of the Boundary).
-        Electrons are generated at random positions within the Source. They 
-        have an initial kinetic energy, and are given a random initial 
-        direction. A distance is randomly chosen from an exponential 
-        distribution, which is defined by the Total Cross Section (total_xsect).
-        Electrons can experience two kinds of scattering event: 1. elastic 
-        and 2. inelastic scattering. Both elastic and inelastic processes have
-        their own corss sections. The total cross section is the sum of elastic
-        and inelastic. After choosing a random distance from the exponential
-        distribtuion, it is randomly chosen whether the collision is elastic
-        or inelastic (this is based on the relative cross sections of the two
-        processes). Then, depending on the scatteing type, a random angle is
-        chosen from an angular spread distribution. Based on the chosen angle,
-        a new velocity is calculated (note: if inelastic scttering, the kinetic
-        energy decreases each event). 
-        The electron's new position is determined from the random distance 
-        divided by the previous velocity. If the new position is inside the 
-        volume of the source, then the move is accepted. The position and 
-        velocity are updated. A counter for number of times elastically
-        or inelastically scattered is incremented.
-        If the electron's new position is outside of the Source, then the move 
-        is rejected, and the electron is projected onto the Boundary by
-        extending its prevous velocity to the Boundary.
-        When an electron hts the boundary, its simulation is over, and the
-        simultation moves on to calculate the next electron. If the electron
-        does not intersect the Boundary ofter a user defined number of
-        inelastic scattering events, then the simulation of the electon is over
-        and the simulation moves to a new electron.
-        This process is repeated for as many electrons as desired.
-        '''
-        self.boundary = Sphere(r)
+    """The simulation class is for running a Monte Carlo simulation of 
+    many electrons travelling through a scattering medium. The simulation
+    is run inside a 3D volume, called the Boundary (it is a sphere). 
+    The scattering medium, and the source of the electrons is a volume
+    called the Source (it is a cylinder at the center of the Boundary).
+    Electrons are generated at random positions within the Source. They 
+    have an initial kinetic energy, and are given a random initial 
+    direction. A distance is randomly chosen from an exponential 
+    distribution, which is defined by the Total Cross Section (total_xsect).
+    Electrons can experience two kinds of scattering event: 1. elastic 
+    and 2. inelastic scattering. Both elastic and inelastic processes have
+    their own corss sections. The total cross section is the sum of elastic
+    and inelastic. After choosing a random distance from the exponential
+    distribtuion, it is randomly chosen whether the collision is elastic
+    or inelastic (this is based on the relative cross sections of the two
+    processes). Then, depending on the scatteing type, a random angle is
+    chosen from an angular spread distribution. Based on the chosen angle,
+    a new velocity is calculated (note: if inelastic scttering, the kinetic
+    energy decreases each event). 
+    The electron's new position is determined from the random distance 
+    divided by the previous velocity. If the new position is inside the 
+    volume of the source, then the move is accepted. The position and 
+    velocity are updated. A counter for number of times elastically
+    or inelastically scattered is incremented.
+    If the electron's new position is outside of the Source, then the move 
+    is rejected, and the electron is projected onto the Boundary by
+    extending its prevous velocity to the Boundary.
+    When an electron hts the boundary, its simulation is over, and the
+    simultation moves on to calculate the next electron. If the electron
+    does not intersect the Boundary ofter a user defined number of
+    inelastic scattering events, then the simulation of the electon is over
+    and the simulation moves to a new electron.
+    This process is repeated for as many electrons as desired.
+    """  
+    
+    def __init__(self, **kwargs):
+
+        if 'boundary_shape' in kwargs.keys():
+            self.boundary = kwargs['boundary_shape']
+        elif 'r' in kwargs.keys():
+            self.boundary = Sphere(kwargs['r'])
         self.intersections = []
         self.intersected = False
-        self.acceptance_angle = 30 / 180 * np.pi
         self.collected = []
         self.depth = 0 # these parameters are used if one wants to generate 
         # electrons piece-wise inside the Disc. Then the depth inside the
         # Disc where the electrons are generated is given by self.depth
         # and the thickness of the piece is given by self.height
         self.height = 0.01
-        self.n_event_cutoff = 20 # max number of inel events per electron
-        self.initial_KE = 1000 # initial kinetic energy of electrons
-    def addSource(self,r,h):
-        ''' This function generates a source of electrons. It has the shape of
-        a Disc, with radius r and heigh h given in nanometers'''
-        self.source = Disc(r,h)
+        self.n_event_cutoff = 50 # max number of inel events per electron
+        self.parameters = {}
+        
+    def addSource(self,r,h, **kwargs):
+        """
+        This function generates a source of electrons. A Source is a shape 
+        that emits electrons. It represents a volume in which the initial 
+        coordinates of the electrons are generated.
+        Parameters
+        ----------
+        r : FLOAT
+            The radius of a cylinder in nm.
+        h : TYPE
+            Thickness of a cylinder in nm.
+        **kwargs:
+            angle_distribution: STR
+                The initial angular distribution of the electrons
+                emitted from the source. 
+                May be one of ['Lambert', 'Sphere', 'Constant']
+            initial_KE: float
+                The initial kinetic ennergy of the electrons in eV.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.source = Source(r,h, **kwargs)
         
     def addScatteringMedium(self, shape):
         self.scatteringMedium = shape
         
-    def addScatterer(self, density, inel_factor, inel_exp, el_factor,el_exp, Z):
-        ''' The scatterer represents a medium containing atoms or molecules
+    def addScatterer(self, d, inel_factor, inel_exp, el_factor,el_exp, Z, **kwargs):
+        """
+        The scatterer represents a medium containing atoms or molecules
         that can scatter electrons. The Scatterer has a density in atoms/nm^3,
         it has an inelastic and elastic scattering cross section factor.
         The factor is used to approximate the cross section as a function of
@@ -87,53 +114,82 @@ class Simulation():
         NIST to a 1/E^x function. The scatterer also has two angular spread 
         functions: one for elastic and one for inelastic scattering. The
         parameters el_angle and inel_angle represend the FWHM of the angular
-        spread function (ni radians).
-        '''
-        self.scatterer = Scatterer(density, inel_factor, inel_exp, 
-                                   el_factor,el_exp, Z)
-        self.scatterer.setXSect(self.initial_KE)
+        spread function (in radians).
+
+        Parameters
+        ----------
+        d : FLOAT
+            Atomic density of the scattering medium in atoms/nm^3.
+        inel_factor : FLOAT
+            Pre-factor used to calculate the inelastic scattering cross 
+            section.
+        inel_exp : FLOAT
+            Exponential factor used to calculate the inelastic scattering cross 
+            section.
+        el_factor : FLOAT
+            Pre-factor used to calculate the elastic scattering cross section.
+        el_exp : FLOAT
+            Exponential factor used to calculate the inelastic scattering cross 
+            section.
+        Z : INT
+            Atomic number of the scattering medium's atoms.
+        **kwargs: 
+            Can be 'loss_function'. The value can be a string of a filename
+            for a csv with two columns (energy loss, probability).
+            It can also be a list of lists, where the first element is a list
+            of energy loss values and the second element is a list of
+            probabilities.
+
+        Returns
+        -------
+        None.
+
+        """
+
+        self.scatterer = Scatterer(d, inel_factor, inel_exp, 
+                                   el_factor,el_exp, Z, **kwargs)
+        self.scatterer.setXSect(self.source.initial_KE)
 
     def createElectron(self):
-        ''' This step is performed at the beginning of each electron simulation
+        """ This step is performed at the beginning of each electron simulation
         It generates an initial position and direction inside the Source.
         The electron carries all of its information (i.e. position, velocity,
         time, n_times elastic and inelastically scattered) in an arrary called
         e.vector.
-        '''
+        """
         self.e = Electron(self.source) # instantiate electron
-        self.e.kinetic_energy = self.initial_KE # overwrite the default KE value
-        self.e.initCoords(self.depth, self.height) # initialize random position
-        # for electron inside the source
-        self.e.initVelocity() # initialize a random velocity vector
         self.results = np.array([np.copy(self.e.vector)]) # create place to
         # keep the results
-        self.scatterer.setXSect(self.initial_KE) #change cross sections
+        self.scatterer.setXSect(self.e.kinetic_energy) #change cross sections
         # of the scatterer so that they correspond to the electron's KE
         
     def _step(self):
-        ''' This function simulations one 'step' in the simulation of an 
+        """ This function simulations one 'step' in the simulation of an 
         electron's path. It calls a method from the Scatterer, called Scatter()
         which determines the kind of scattering event (elastic or inelastic), 
         the distance the electron travels before the scattering event, the new
         direction of the electron relative to its old direction, in polar coord
         (radians)
-        '''
+        """
         # First get the distance electron travels before being scattered, as
         # well as the kind of scattering event and the angle of scattering
+        
         kind, d, theta, phi = self.scatterer.Scatter()
         # The new time is the distance travelled, divided by the length of
         # the velocity vector.
         velocity = self.e.vector[3:6]
-        position = self.e.vector[0:3]
+        position = self.e.vector[0:3].copy()
         time = d / np.linalg.norm(velocity)
+        old_position = position.copy()
 
         # Determine the new position
-        new_position = (position + (velocity * time)) 
+        new_position = (position.copy() + (velocity * time)) 
+
         
         if self.scatteringMedium.inside(new_position):
             # Check if next potential scattering event is inside or outside
-            # source. If it is still inside the scattering medium, then 
-            # the electron is scattered once again
+            # scattering medium. If it is still inside the scattering medium, 
+            # then the electron is scattered once again
             self.e.vector[0:3] = new_position
             # Determine the new velocity after scattering
             # The velocity vector needs to be transformed into a different
@@ -148,8 +204,13 @@ class Simulation():
             else:
                 # increment inelastic scattering count
                 self.e.vector[7]+=1
-                self.e.changeSpeed(self.scatterer.getDeltaKE())
-                self.scatterer.setXSect(self.e.kinetic_energy)
+                delta_E = self.scatterer.getDeltaKE()
+                self.e.updateKineticEnergy(delta_E)
+                if self.e.kinetic_energy > 0:
+                    self.scatterer.setXSect(self.e.kinetic_energy)
+                else:
+                    self.e.kinetic_energy = 0
+                    self.e.vector[3:6] = np.array([0,0,0])
             # Determine the new time
             self.e.vector[6] += time
             self.e.pathlength += d
@@ -161,10 +222,11 @@ class Simulation():
             
             # To determine path length within scattering medium
             # first find the interesection with the surface of the scatterer
-            scat_inter = self.scatteringMedium.findIntersect(position, 
+            scat_inter = self.scatteringMedium.findIntersect(old_position.copy(), 
                                                              velocity)
+
             # Get the distance from intersection to previous position
-            d = np.linalg.norm(self.e.vector[:3] - scat_inter)
+            d = np.linalg.norm(old_position - scat_inter)
             
             # Append this distance to the pathlengths
             self.e.pathlength += d
@@ -181,15 +243,16 @@ class Simulation():
             # Collect all intersected electrons into a list
             self.intersections += [list(self.e.vector)]
             self.intersected = True
+            
         
     def Simulate(self):
-        ''' This function runs a complete set of simulation steps on an 
+        """ This function runs a complete set of simulation steps on an 
         electron. It starts by generating the electron, then repeatedly
         performs simulation steps until the electron has either intersected
         the Boundary, or it has been scattered the set number of times 
         (n_event_cutoff). The calcuation results are saved in the attribute 
         self.results
-        '''
+        """
         self.createElectron()
         self.intersected = False # this consdition is changed inside of the 
         # function self._step()
@@ -202,16 +265,18 @@ class Simulation():
                                      axis=0)
                  
     def simulateMany(self, n, *args):
-        ''' This function will run the simulation for many (n) electrons.
+        """ This function will run the simulation for many (n) electrons.
         The argument 'keep all' tells the programs to store all the calculated
         paths of every electron. The result is held in the attrib. 'all_paths',
         and is a list of numpy arrays. Each array has a different shape [x,9].
         If the argument 'start finish' is provided, then the starting propertes
-        and final properties of each electron are returned in the attribute
-        called 'start_finish'.
+        and final properties and pathlengths of each electron are returned in 
+        the attribute called 'start_finish'. 
         Otherwise, only the final step in the calculation is saved, in the 
         attribute 'intersections'.
-        '''
+        """
+        
+        self.intersections  = []
         if 'keep all' in args:
             # this keeps all the intermediate positions and velocities of every
             # electron
@@ -224,7 +289,7 @@ class Simulation():
             finish = []
             pathlengths = []
             for step in range(n):
-                print(step)
+                #print(step)
                 self.Simulate()
                 start += [np.copy(self.results[0])]
                 finish += [np.copy(self.results[-1])]
@@ -235,12 +300,29 @@ class Simulation():
                 self.Simulate() # this keeps the final positions, velocities
                 # and scatter count in the attribute called self.results
         self.intersections = np.array(self.intersections)
+        self.parameters['n'] = n
         
     def densityFromP(self, P, T=300): # provide P in mbar
+        """Parameters
+        ----------
+        P : FLOAT
+            Pressure in mbar.
+        T : FLOAT
+            Templerature in Kelvin.
+        Returns
+        -------
+        density : FLOAT
+            The particle density in particles per nm^3
+
+        """    
         R = 138 # in units of nm^3/mbar/K/atom
         density = P / (T * R)
         return density #returned in atoms / nm^3
+    
+    
                 
+
+
         
 #%%
 if __name__ == '__main__':
