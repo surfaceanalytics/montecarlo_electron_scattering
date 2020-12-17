@@ -12,7 +12,7 @@ import scipy.linalg
 #%%
 
 class Sphere():
-    ''' Sphere is a class that represents the simulation environment. Electrons
+    """ Sphere is a class that represents the simulation environment. Electrons
     are generated form a 'source' shape inside of the sphere, and eventually 
     intersect the sphere during the simulation.
     The Sphere class has a method to generate x and y positions, given a z 
@@ -20,7 +20,8 @@ class Sphere():
     method returns a boolean.
     It also has a method to return the intersection of a vector with the sphere.
     The method takes a vector, that represents direction, as input, and returns
-    x,y,z as outputs, representing the intersection with the sphere.    '''
+    x,y,z as outputs, representing the intersection with the sphere.    
+    """
     def __init__(self,r):
         self.r = r
         
@@ -83,16 +84,20 @@ class Disc():
     ''' The Disc class is used for the shape where electrons are generated and
     where they are scattered. It is defined by the attributes r (radius in nm)
     and h (height in nm).
-    It has a mothod to return a boolean, determining if a point is inside the
+    It has a method to return a boolean, determining if a point is inside the
     volums of the disc or not.
     It has a method to return a random position from inside the volume of the 
     disc.
     It has a method that generates a random position from a slice inside of the
     disc.
     '''
-    def __init__(self, r, h):
+    def __init__(self, r, h, **kwargs):
         self.r = r
         self.h = h
+        if 'center' in kwargs.keys():
+            self.center = kwargs['center']
+        else:
+            self.center = [0,0,0]
         
     def inside(self, position):
         ''' This checks if a given point is inside of the shape
@@ -101,8 +106,8 @@ class Disc():
         y = position[1]
         z = position[2]
         inside = True
-        if ((z < -self.h)
-        | (z > 0)
+        if ((z < (self.center[2] - self.h / 2))
+        | (z > (self.center[2] + self.h / 2))
         | (np.sqrt(x**2  + y**2) > self.r**2)):
             inside = False
         else:
@@ -116,11 +121,11 @@ class Disc():
         r = rand() * self.r
         x = r * np.cos(theta)
         y = r * np.sin(theta)
-        z = rand()*self.h - self.h
+        z = rand()*self.h - self.h / 2 + self.center[2]
         return np.array([x,y,z])
     
     def getSlicePosition(self, depth, height):
-        ''' This function generates a random position iside of a 'slice'
+        ''' This function generates a random position inside of a 'slice'
         The slice represents a part of the Source disc. It has the same radius
         as the Source, but it has its own height and depth below the top 
         surface of the disc.
@@ -133,47 +138,73 @@ class Disc():
         return np.array([x,y,z])
     
     def findIntersect(self, position, direction):
-        ''' This finds the intersection point between a line, characterized by
-        a position and a direction, and a disc.
-        '''
+        """This finds the intersection point between a line (characterized by
+        a position and a direction), and a disc.
+        Parameters
+        ----------
+        position : 3-by-1 ARRAY of FLOATS
+            The position vector relative to the center of the boundary.
+        direction : 3-by-1 ARRAY of FLOATS.
+            The velocity vector in the coordinate system of the boundary.
+
+        Returns
+        -------
+        intersect : 3-by-1 ARRAY fo FLOATS
+            The coordinates where the electron intersects the Disc.
+        """
+
         v = direction / np.linalg.norm(direction)
-        p = position
-        ''' First find if where the line intersects the circle, i.e. the 
-        projection of the cylinder along its axis.
-        '''
-        t1 = (1/(v[1]**2 + v[0]**2) 
-            * (-v[1]*p[1] - v[0]*p[0] 
-                + np.sqrt(self.r**2*(v[1]**2+v[0]**2) 
-                    - (v[1]*p[0])**2 + (2*v[1]*v[0]*p[1]*p[0])
-                    - (v[0]*p[1])**2)))
-        t2 = (-1/(v[1]**2 + v[0]**2) 
-            * (v[1]*p[1] + v[0]*p[0] 
-                + np.sqrt(self.r**2*(v[1]**2+v[0]**2) 
-                    - (v[1]*p[0])**2 + (2*v[1]*v[0]*p[1]*p[0])
-                    - (v[0]*p[1])**2)))
-        ''' Pick the t that is positive, because we want only the intersection
-        in the direction the particle is traveling
-        '''
-        t = max(t1,t2) 
-        new_p = p + t*v
-        ''' Then check if the particle is intersecting the caps of the disc
-        '''
-        if (new_p[2] > 0):
-            t = -p[2]/v[2]
+        
+        c = [0,0,1]
+
+        dot = np.dot(v,c)
+        
+        angle = np.arccos(dot)
+        
+        if angle == 0: # This checks if the electron is parallel to disc.
+            new_z = self.center[2] + self.h /2
+            new_p = position
+            new_p[2] = new_z
+        else:
+            p = position
+            ''' First find where the line intersects the circle, i.e. the 
+            projection of the cylinder along its axis.
+            '''
+            t1 = (1/(v[1]**2 + v[0]**2) 
+                * (-v[1]*p[1] - v[0]*p[0] 
+                    + np.sqrt(self.r**2*(v[1]**2+v[0]**2) 
+                        - (v[1]*p[0])**2 + (2*v[1]*v[0]*p[1]*p[0])
+                        - (v[0]*p[1])**2)))
+            t2 = (-1/(v[1]**2 + v[0]**2) 
+                * (v[1]*p[1] + v[0]*p[0] 
+                    + np.sqrt(self.r**2*(v[1]**2+v[0]**2) 
+                        - (v[1]*p[0])**2 + (2*v[1]*v[0]*p[1]*p[0])
+                        - (v[0]*p[1])**2)))
+            ''' Pick the t that is positive, because we want only the intersection
+            in the direction the particle is traveling
+            '''
+            t = max(t1,t2) 
             new_p = p + t*v
-        elif (new_p[2] < (0-self.h)):
-            t = (-self.h - p[2]) / v[2]
-            new_p = p + t*v        
+            ''' Then check if the particle is intersecting the caps of the disc
+            '''
+            if (new_p[2] > (self.center[2] + self.h / 2)):
+                t = ((self.center[2]+self.h/2)-p[2]) / v[2]
+                new_p = p + t*v
+            elif (new_p[2] < (self.center[2] - self.h / 2)):
+                t = ((self.center[2]-self.h/2) - p[2]) / v[2]
+                new_p = p + t*v        
         intersect = new_p
+        
         return intersect
 
 #%%
         
 if __name__ == '__main__':
-    d = Disc(5000,100)  
+    # Instantiate a Disc of radius 5000 and height 100
+    d = Disc(5000,200)  
     d_xyz = []
-    for i in range(500):
-        p = d.findIntersect(d.getRandPosition(),[rand(),rand(),rand()])
+    for i in range(3500):
+        p = d.findIntersect(d.getRandPosition(),d.getRandPosition())
         d_xyz += [p]
     d_xyz = np.array(d_xyz)
     

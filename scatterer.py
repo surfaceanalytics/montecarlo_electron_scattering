@@ -12,6 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import scipy.linalg
 from shapes import Sphere, Disc
 from generate_angle import AngleDist, Phi
+from loss_function import LoadedLossFunction, DiscreetLossFunction
 
 #%%
 
@@ -25,14 +26,23 @@ class Scatterer():
     distributions. These are probablity distribution functions that generate
     random angles according to the chosen AngleDist class.    
     '''
-    def __init__(self, density, inel_factor, inel_exp, el_factor,el_exp, Z):
+    def __init__(self, d, inel_factor, inel_exp, el_factor,el_exp, Z, **kwargs):
         self.inel_factor = inel_factor
         self.inel_exp = inel_exp
         self.el_exp = el_exp
         self.el_factor = el_factor
-        self.density = density
+        self.density = d
         self.Z = Z
-        self.loss_fn = [[0.2,10],[0.8,12]] # this represents the loss function
+        
+        if 'loss_function' in kwargs.keys():
+            if isinstance(kwargs['loss_function'],str):
+                filename = kwargs['loss_function']
+                self.loss_fn = LoadedLossFunction(filename)
+            elif isinstance(kwargs['loss_function'],list):
+                self.loss_fn = DiscreetLossFunction(kwargs['loss_function'])
+        else:
+            filename = 'He_loss_fn_coarse.csv'
+            self.loss_fn = LoadedLossFunction(filename) # this represents the loss function
         # it is a list of lists. The elements of the sub-list are [probability
         # energy loss, kinetic energy change in energy loss]
         
@@ -88,11 +98,6 @@ class Scatterer():
         loss event's scattering probability, then the amount of energy loss is
         returned (in eV).
         '''
-        c = choice(self.loss_fn)
-        r = rand()
-        if r < c[0]:
-            return c[1]
-        else:
-            return self.getDeltaKE()
+        return self.loss_fn.getValue()
         
 

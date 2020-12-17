@@ -30,6 +30,16 @@ class Poisson():
             * np.exp(-1 * x * self.rho * self.sigma))
         return y
     
+    def min_x(self):
+        return self.min_x
+    
+    def max_x(self):
+        return self.max_x
+    
+    def max_y(self):
+        self._max_y()
+        return self.max_y
+    
     def cdf(self, x):
         ''' cumulative distributino function of the Poisson distribution'''
         a = self.rho * self.sigma
@@ -37,7 +47,7 @@ class Poisson():
         return cdf
 
     def _max_y(self):
-        ''' finds the maximum value of y (proability)
+        ''' finds the maximum value of y (probility)
         '''
         self.max_y = self.y(1/(self.sigma*self.rho))
 
