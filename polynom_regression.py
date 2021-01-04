@@ -37,7 +37,8 @@ if __name__ == '__main__':
                 for nozzle in nozzles:
                     nozzle_diameter = nozzle
                     for angle in angles:
-                        A.pathHistogram(bins=200, x_limits=(290000,350000), accept_angle=angle, nozzle_diameter=nozzle_diameter)      
+                        A.pathHistogram(bins=200, x_limits=(290000,350000), 
+                                        accept_angle=angle, nozzle_diameter=nozzle_diameter)      
                         A.areasUnderProfiles()
                         params = A.parameters
                         p = A.profiles
@@ -84,8 +85,6 @@ if __name__ == '__main__':
                 f += variables[idx] + '^' + str(p)
         features += [f]
     
-    
-
     little_x = np.array([[30, 0.1,13, 0.600000,0.200000]])
     avg_predict = model.predict(little_x)[0] * 200000
     

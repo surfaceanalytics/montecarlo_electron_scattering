@@ -8,8 +8,6 @@ Created on Sun Apr  5 10:58:22 2020
 import numpy as np
 from random import random as rand
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import time
 #%%
 
 def length(vector):

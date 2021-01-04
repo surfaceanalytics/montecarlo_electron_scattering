@@ -32,8 +32,7 @@ def saveResultsToPickle(result, params, filename):
     to_pickle = {'result':result.copy(), 'parameters':params.copy()}
     with open(filename, 'wb') as f: 
         pickle.dump(to_pickle, f)
-   
-        
+       
 def loadResultsFromPickle(filename):
     r = pickle.load(open(filename, "rb" ))
     results = r['result']
