@@ -75,7 +75,7 @@ class Simulation():
         self.n_event_cutoff = 50 # max number of inel events per electron
         self.parameters = {}
         
-    def addSource(self,r,h, **kwargs):
+    def addSource(self,r: float,h: float, **kwargs):
         """
         This function generates a source of electrons. A Source is a shape 
         that emits electrons. It represents a volume in which the initial 
@@ -104,8 +104,10 @@ class Simulation():
     def addScatteringMedium(self, shape):
         self.scatteringMedium = shape
         
-    def addScatterer(self, d, inel_factor, inel_exp, el_factor,el_exp, Z, **kwargs):
-        """
+    def addScatterer(self, d:float, inel_factor:float, inel_exp:float, 
+                     el_factor:float, el_exp:float, Z:int, **kwargs):
+        """ Add a scatterer to the scattering medium.
+        
         The scatterer represents a medium containing atoms or molecules
         that can scatter electrons. The Scatterer has a density in atoms/nm^3,
         it has an inelastic and elastic scattering cross section factor.
@@ -143,25 +145,27 @@ class Simulation():
         Returns
         -------
         None.
-
         """
-
         self.scatterer = Scatterer(d, inel_factor, inel_exp, 
                                    el_factor,el_exp, Z, **kwargs)
         self.scatterer.setXSect(self.source.initial_KE)
 
     def createElectron(self):
-        """ This step is performed at the beginning of each electron simulation
-        It generates an initial position and direction inside the Source.
-        The electron carries all of its information (i.e. position, velocity,
-        time, n_times elastic and inelastically scattered) in an arrary called
-        e.vector.
+        """Create an electron.
+        
+        This step is performed at the beginning of each electron simulation.
+        It generates an Electron object, where initial position is inside the 
+        Source. The electron carries all of its information 
+        (i.e. position, velocity, time, n_times elastic and inelastically 
+        scattered) in an arrary called e.vector.
         """
         self.e = Electron(self.source) # instantiate electron
         self.results = np.array([np.copy(self.e.vector)]) # create place to
         # keep the results
-        self.scatterer.setXSect(self.e.kinetic_energy) #change cross sections
-        # of the scatterer so that they correspond to the electron's KE
+        
+        """Update the cross sections of the scatterer using the electron's 
+        new kinetic energy."""
+        self.scatterer.setXSect(self.e.kinetic_energy) 
         
     def _step(self):
         """ This function simulations one 'step' in the simulation of an 
@@ -171,38 +175,37 @@ class Simulation():
         direction of the electron relative to its old direction, in polar coord
         (radians)
         """
-        # First get the distance electron travels before being scattered, as
-        # well as the kind of scattering event and the angle of scattering
         
+        """First get the distance electron travels before being scattered, as
+        well as the kind of scattering event and the angle of scattering."""
         kind, d, theta, phi = self.scatterer.Scatter()
-        # The new time is the distance travelled, divided by the length of
-        # the velocity vector.
+        """The new time is the distance travelled, divided by the length of
+        the velocity vector."""
         velocity = self.e.vector[3:6]
         position = self.e.vector[0:3].copy()
         time = d / np.linalg.norm(velocity)
         old_position = position.copy()
 
-        # Determine the new position
+        """Determine the new position."""
         new_position = (position.copy() + (velocity * time)) 
 
-        
         if self.scatteringMedium.inside(new_position):
-            # Check if next potential scattering event is inside or outside
-            # scattering medium. If it is still inside the scattering medium, 
-            # then the electron is scattered once again
+            """Check if next potential scattering event is inside or outside
+            scattering medium. If it is still inside the scattering medium, 
+            then the electron is scattered once again."""
             self.e.vector[0:3] = new_position
-            # Determine the new velocity after scattering
-            # The velocity vector needs to be transformed into a different
-            # coordinate system to perform the rotation.
+            """Determine the new velocity after scattering.
+            The velocity vector needs to be transformed into a different
+            coordinate system to perform the rotation."""
             new_velocity = rotate(velocity, theta, phi)
             self.e.vector[3:6] = new_velocity
-            # Check the kind of scattering (elastic or inelastic) and increment 
-            # the count accordingly
+            """Check the kind of scattering (elastic or inelastic) and increment 
+            the count accordingly."""
             if kind == 'elastic':
-                # increment the elastic scattering count
+                """Icrement the elastic scattering count."""
                 self.e.vector[8]+=1
             else:
-                # increment inelastic scattering count
+                """Increment inelastic scattering count."""
                 self.e.vector[7]+=1
                 delta_E = self.scatterer.getDeltaKE()
                 self.e.updateKineticEnergy(delta_E)
@@ -211,47 +214,49 @@ class Simulation():
                 else:
                     self.e.kinetic_energy = 0
                     self.e.vector[3:6] = np.array([0,0,0])
-            # Determine the new time
+            """Determine the new time."""
             self.e.vector[6] += time
             self.e.pathlength += d
             
         else: 
-            # This condition is run, if the electron's new position 
-            # is not inside the scattering medium. Then the scattering event 
-            # is rejected and the electron is projected onto the Sphere.
+            """This condition is run, if the electron's new position 
+            is not inside the scattering medium. Then the scattering event 
+            is rejected and the electron is projected onto the Sphere."""
             
-            # To determine path length within scattering medium
-            # first find the interesection with the surface of the scatterer
+            """To determine path length within scattering medium
+            first find the interesection with the surface of the scatterer."""
             scat_inter = self.scatteringMedium.findIntersect(old_position.copy(), 
                                                              velocity)
 
-            # Get the distance from intersection to previous position
+            """Get the distance from intersection to previous position."""
             d = np.linalg.norm(old_position - scat_inter)
             
-            # Append this distance to the pathlengths
+            """Append this distance to the pathlengths."""
             self.e.pathlength += d
             
-            # Then find coordinates where electron will intersect the boundary
+            """Then find coordinates where electron will intersect the boundary."""
             intersect = self.boundary.findIntersect(position, velocity)
-            # Set the electron's current position coordinates to intersection
-            # coordinates
+            """Set the electron's current position coordinates to the 
+            intersection coordinates."""
             self.e.vector[0:3] = intersect
-            # Get new time
+            """Get new time."""
             distance = np.linalg.norm(intersect - position)
             new_time = distance / np.linalg.norm(velocity)
             self.e.vector[6] = new_time
-            # Collect all intersected electrons into a list
+            """Collect all intersected electrons into a list."""
             self.intersections += [list(self.e.vector)]
             self.intersected = True
             
         
     def Simulate(self):
-        """ This function runs a complete set of simulation steps on an 
+        """ Simulate the complete path of an electron from source to boundary.
+        
+        This function runs a complete set of simulation steps on an 
         electron. It starts by generating the electron, then repeatedly
         performs simulation steps until the electron has either intersected
         the Boundary, or it has been scattered the set number of times 
         (n_event_cutoff). The calcuation results are saved in the attribute 
-        self.results
+        self.results.
         """
         self.createElectron()
         self.intersected = False # this consdition is changed inside of the 
@@ -264,22 +269,28 @@ class Simulation():
                                      np.array([np.copy(self.e.vector[:])]), 
                                      axis=0)
                  
-    def simulateMany(self, n, *args):
-        """ This function will run the simulation for many (n) electrons.
-        The argument 'keep all' tells the programs to store all the calculated
-        paths of every electron. The result is held in the attrib. 'all_paths',
-        and is a list of numpy arrays. Each array has a different shape [x,9].
-        If the argument 'start finish' is provided, then the starting propertes
-        and final properties and pathlengths of each electron are returned in 
-        the attribute called 'start_finish'. 
-        Otherwise, only the final step in the calculation is saved, in the 
-        attribute 'intersections'.
-        """
+    def simulateMany(self, n: int, *args: str):
+        """ Run simulations for multiple electrons.
         
+        Parameters:
+        -----------
+        n: int
+            The number of simulations to run.
+        *args:
+            'keep all': If this argument is provided, all the calculated
+                paths are kept in memory. results are stored in the 
+                attirbute self.all_paths.
+            'start finish': If this argument is provided, then the 
+                starting properties, final properties and pathlengths of 
+                each electron are stored in the attribute self.start_finish
+                which is 
+                Otherwise, only the final step in the calculation is saved,
+                in the attribute self.intersections.
+        """
         self.intersections  = []
         if 'keep all' in args:
-            # this keeps all the intermediate positions and velocities of every
-            # electron
+            """ This keeps all the intermediate positions and velocities of 
+            every electron."""
             self.all_paths = []
             for step in range(n):
                 self.Simulate()
@@ -302,8 +313,10 @@ class Simulation():
         self.intersections = np.array(self.intersections)
         self.parameters['n'] = n
         
-    def densityFromP(self, P, T=300): # provide P in mbar
-        """Parameters
+    def densityFromP(self, P: float, T: float = 300) -> float:
+        """ Calculate density, given pressure and temperature.
+        
+        Parameters
         ----------
         P : FLOAT
             Pressure in mbar.
@@ -313,17 +326,12 @@ class Simulation():
         -------
         density : FLOAT
             The particle density in particles per nm^3
-
         """    
         R = 138 # in units of nm^3/mbar/K/atom
         density = P / (T * R)
         return density #returned in atoms / nm^3
     
-    
-                
 
-
-        
 #%%
 if __name__ == '__main__':
     sim = Simulation(5000) 
@@ -457,21 +465,3 @@ if __name__ == '__main__':
     plt.plot(thrice[:,0],thrice[:,1])
     
     plt.show
-    
-    #%%
-    
-    data = {'n_event_cufoff': sim.n_event_cutoff, 'boudary_radius':sim.boundary.r,
-            'source_radius':sim.source.r, 'source_height':sim.source.h,
-            'slice_thickness':1, 'slice_start':0, 'slice_stop':100,
-            'electrons_per_slice':15000, 'scatterer_density':59,
-            'inel_factor':6, 'el_factor':10,'inel_angle':10,'el_angle':300,
-            'poisson_distance_cutoff': 1E-5, 'inel_angle_dist':'Cauchy',
-            'el_angle_dist':'Cauchy','duration':elapsed,
-            'avg_loss_per_event':10,'results':sim.intersections}
-    
-    filename = 'simulation_12'
-    outfile = open(filename,'wb')
-    pickle.dump(data,outfile)
-    outfile.close()
-    
-

@@ -17,7 +17,7 @@ from loss_function import LoadedLossFunction, DiscreetLossFunction
 #%%
 
 class Scatterer():
-    '''The Scatterer class represents the scattering medium (i.e. some
+    """The Scatterer class represents the scattering medium (i.e. some
     atoms, of a particular element, with a specified density).
     The scattering medium can elastically scatter or inelastically scatter
     an electron. Both processes are defined by the elastic and inelastic 
@@ -25,7 +25,8 @@ class Scatterer():
     The elastic and inelastic scattering processes each have scattering angle 
     distributions. These are probablity distribution functions that generate
     random angles according to the chosen AngleDist class.    
-    '''
+    """
+    
     def __init__(self, d, inel_factor, inel_exp, el_factor,el_exp, Z, **kwargs):
         self.inel_factor = inel_factor
         self.inel_exp = inel_exp
@@ -57,12 +58,14 @@ class Scatterer():
 
         
     def Scatter(self):
-        ''' Determines whether elastic or inelastic scattering occurs.
+        """Scatter an electron one time.
+        
+        Determines whether elastic or inelastic scattering occurs.
         Depending on which occurs, it selects the appropriate angular spread
         function. Then it gets a random angle. It returns a list containing
         the kind of scattering event, the distance the electron travelled since
         its last scattering event, and the change in angle upon scattering.
-        '''
+        """
         d = self.getDistance()
         kind = self.getKind()
         dist = self.angle_dist[kind]
@@ -71,21 +74,26 @@ class Scatterer():
         return kind, d, theta, phi
         
     def setXSect(self, KE):
-        ''' The cross sections are calculated from fits to the IMFP from
+        """Set the scattering cross section.
+        
+        The cross sections are calculated from fits to the IMFP from
         the QUASES software, which uses the TPPM2 equations.
         The cross section is 1/(density * prefactor * kinetic_energy ^ factor)
-        '''
+        """
         self.inel_xsect = self.inel_factor/(KE**self.inel_exp)
         self.el_xsect = self.el_factor/(KE**self.el_exp)
         self.total_xsect = self.inel_xsect + self.el_xsect
         
     def getDistance(self):
-        ''' Returns a random distance in nm based on an exponential distribution
+        """Get a random distance for thext scattering event.
+        
+        Returns a random distance in nm based on an exponential distribution
         from the total scattering cross section (in nm^2)
-        '''
+        """
         return -1/(self.total_xsect*self.density) * np.log(rand())
     
     def getKind(self):
+        """Get the kind of scattering."""
         if rand() < self.inel_xsect / (self.inel_xsect + self.el_xsect):
             kind = 'inelastic'
         else:
@@ -93,11 +101,13 @@ class Scatterer():
         return kind
     
     def getDeltaKE(self):
-        ''' This method randomly selects an element from the loss_fn list.
+        """Get the amount of kinetic energy lost.
+        
+        This method randomly selects an element from the loss_fn list.
         Then it draws a random number. If the random number is less than the 
         loss event's scattering probability, then the amount of energy loss is
         returned (in eV).
-        '''
+        """
         return self.loss_fn.getValue()
         
 

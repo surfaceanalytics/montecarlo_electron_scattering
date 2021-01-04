@@ -8,7 +8,6 @@ Created on Mon Dec  7 13:55:25 2020
 import numpy as np
 from random import random as rand
 import matplotlib.pyplot as plt
-from poisson_distance import Poisson
 from probability_distribution import LoadedDistribution
 import time
 
