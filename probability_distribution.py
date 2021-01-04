@@ -17,7 +17,7 @@ class Distribution():
         return
     
 class LoadedDistribution(Distribution):
-    """ A class that represents a distribution loaded from a file.
+    """A class that represents a distribution loaded from a file.
     
     The format of the file should be csv, with the first column as x values
     and the second column as y values.
@@ -31,6 +31,7 @@ class LoadedDistribution(Distribution):
         self._construct_CDF()
         
     def get_y(self,x:float) -> float:
+        """Return a sample from the probability distribution."""
         _x = self.xy[0]
         '''Get the index for the value closest to x.'''
         idx = min(range(len(_x)), key=lambda i: abs(_x[i]-x))
@@ -38,9 +39,11 @@ class LoadedDistribution(Distribution):
         return y
         
     def max_x(self):
+        """Return the maximum x-value in the distribution."""
         return max(self.xy[0])
     
     def min_x(self):
+        """Return the minimum x-value in the distribution."""
         return min(self.xy[0])
     
     def _construct_CDF(self):
@@ -67,6 +70,7 @@ class ManualDistribution(Distribution):
         self._construct_CDF()
         
     def get_y(self, x:float) -> float:
+        """Return a sample from the probability distribution."""
         _x = self.xy[0]
         '''Get the index for the value closest to x.'''
         idx = min(range(len(_x)), key=lambda i: abs(_x[i]-x))
@@ -74,9 +78,11 @@ class ManualDistribution(Distribution):
         return y
                
     def max_x(self):
+        """Return the maximum x-value in the distribution."""
         return max(self.xy[0])
     
     def min_x(self):
+        """Return the minimum x-value in the distribution."""
         return min(self.xy[0])
     
     def _construct_CDF(self):
@@ -116,6 +122,6 @@ if __name__=='__main__':
     
     dist = LoadedDistribution(filename)
     
-    print(dist.y(50))
+    print(dist.get_y(50))
 
     

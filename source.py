@@ -4,14 +4,22 @@ Created on Tue Dec  8 16:12:25 2020
 
 @author: Mark
 """
-from shapes import Sphere, Disc
-from generate_angle import AngleDist
-
 from numpy.random import rand
 import numpy as np
 
+from shapes import Disc
+from generate_angle import AngleDist
+
 class Source(Disc):
+    """The Source represents a shape that emits electrons.
+    
+    Electrons are generated at random positions inside the source. They have 
+    an initial kinetic energy reandomly chosen from a distribution. They have 
+    an initial direction randomly chosen from a angular distribution function.
+    """
+    
     def __init__(self, r, h, **kwargs):
+        """Construct object."""
         super().__init__(r,h,**kwargs)
         
         if 'angle_distribution' in kwargs.keys():
@@ -43,11 +51,14 @@ class Source(Disc):
                                                  split = self.emission_line[1])
         
     def getKE(self):
+        """Return an initial kinetic energy."""
         return self.E_distribution.getKE()
         
 class EnergyDistribution:
+    """his class represents a probability density function for inital kinetic energy."""
     
     def __init__(self, initial, line_type, **kwargs):
+        """Construct object."""
         self.width = 0.3
         if 'split' in kwargs.keys():
             split = kwargs['split']
@@ -64,6 +75,7 @@ class EnergyDistribution:
             self.E = [[4/7, 3/7],[initial, initial-split]]
             
     def getKE(self):
+        """Return a kinetic energy randomly chosen from the distribution."""
         r = rand()
         if r <= self.E[0][0]:
             KE = self.E[1][0]

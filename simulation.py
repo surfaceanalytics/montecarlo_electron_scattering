@@ -6,19 +6,13 @@ Created on Tue Apr  7 14:49:02 2020
 """
 
 import numpy as np
-from random import random as rand
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import scipy.linalg
-import scipy.stats
-from numpy.random import standard_cauchy as cauchy
-from shapes import Sphere, Disc
+from shapes import Sphere
 from generate_angle import AngleDist
-from rotation import length, rotate
+from rotation import rotate
 from scatterer import Scatterer
 from electron import Electron
 from source import Source
-import pickle
 
 #%%
 
@@ -76,10 +70,10 @@ class Simulation():
         self.parameters = {}
         
     def addSource(self,r: float,h: float, **kwargs):
-        """
-        This function generates a source of electrons. A Source is a shape 
-        that emits electrons. It represents a volume in which the initial 
-        coordinates of the electrons are generated.
+        """Generate a source of electrons.
+        
+        A Source is a shape that emits electrons. It represents a volume in 
+        which the initial coordinates of the electrons are generated.
         Parameters
         ----------
         r : FLOAT
@@ -97,7 +91,6 @@ class Simulation():
         Returns
         -------
         None.
-
         """
         self.source = Source(r,h, **kwargs)
         
@@ -168,14 +161,15 @@ class Simulation():
         self.scatterer.setXSect(self.e.kinetic_energy) 
         
     def _step(self):
-        """ This function simulations one 'step' in the simulation of an 
+        """Simulate one step.
+        
+        This function simulates one 'step' in the simulation of an 
         electron's path. It calls a method from the Scatterer, called Scatter()
         which determines the kind of scattering event (elastic or inelastic), 
         the distance the electron travels before the scattering event, the new
         direction of the electron relative to its old direction, in polar coord
-        (radians)
+        (radians).
         """
-        
         """First get the distance electron travels before being scattered, as
         well as the kind of scattering event and the angle of scattering."""
         kind, d, theta, phi = self.scatterer.Scatter()
@@ -225,7 +219,7 @@ class Simulation():
             
             """To determine path length within scattering medium
             first find the interesection with the surface of the scatterer."""
-            scat_inter = self.scatteringMedium.findIntersect(old_position.copy(), 
+            scat_inter = self.scatteringMedium.getIntersection(old_position.copy(), 
                                                              velocity)
 
             """Get the distance from intersection to previous position."""
@@ -235,7 +229,7 @@ class Simulation():
             self.e.pathlength += d
             
             """Then find coordinates where electron will intersect the boundary."""
-            intersect = self.boundary.findIntersect(position, velocity)
+            intersect = self.boundary.getIntersection(position, velocity)
             """Set the electron's current position coordinates to the 
             intersection coordinates."""
             self.e.vector[0:3] = intersect
@@ -249,7 +243,7 @@ class Simulation():
             
         
     def Simulate(self):
-        """ Simulate the complete path of an electron from source to boundary.
+        """Simulate the complete path of an electron from source to boundary.
         
         This function runs a complete set of simulation steps on an 
         electron. It starts by generating the electron, then repeatedly
@@ -270,7 +264,7 @@ class Simulation():
                                      axis=0)
                  
     def simulateMany(self, n: int, *args: str):
-        """ Run simulations for multiple electrons.
+        """Run simulations for multiple electrons.
         
         Parameters:
         -----------
@@ -314,7 +308,7 @@ class Simulation():
         self.parameters['n'] = n
         
     def densityFromP(self, P: float, T: float = 300) -> float:
-        """ Calculate density, given pressure and temperature.
+        """Calculate density, given pressure and temperature.
         
         Parameters
         ----------
@@ -331,39 +325,35 @@ class Simulation():
         density = P / (T * R)
         return density #returned in atoms / nm^3
     
-
-#%%
+#%% Set-up the simulation
 if __name__ == '__main__':
-    sim = Simulation(5000) 
+    sim_radius = 5000
+    source_radius = 6000
+    sample_nozzle_distance = 5000
+    boundary_shape = Sphere(sim_radius)
+    initial_KE = 1400
+    sim = Simulation(boundary_shape = boundary_shape) 
+    sim.addScatteringMedium(boundary_shape)
     # argument is the radius of the spherical simulation evnrionment
-    sim.addSource(6000,6000) # source is a shape that emits electrons
+    sim.addSource(source_radius,1,initial_KE = initial_KE) # source is a shape that emits electrons
     # arguments are radius and thickness (in nm) of a disc
-    sim.addScatterer(59,6,10,47) 
-    # arguments are denstiy in atoms/nm^3
-    # inel_factor, which determines the inelastic cross section
-    # el_factor, which determines the elastic cross section
-    # and atomic number
+    sim.addScatterer(0.01,1.551,0.831,0.95,1.12,4) 
     sim.scatterer.angle_dist = {'elastic':AngleDist(kind = 'Rutherford', 
-                                                    energy = sim.initial_KE,
+                                                    energy = initial_KE,
                                                     Z = sim.scatterer.Z,
                                                     param = 0.1), 
                            'inelastic':AngleDist(kind = 'Constant')}
-    
-    sim.height = 75
 
-#%% 
+#%% Run the simulation
+#Potentially long calculation.
 
-# very long calculation
-if __name__ == '__main__':
-
-    sim.simulateMany(1000, 'start finish')
-    
+    sim.simulateMany(5000, 'start finish')
     results = sim.start_finish
-
+    
 
 #%% 
 # plot all intersections with the boundary
-    xyz = intersections[:,0:3]
+    xyz = sim.intersections[:,0:3]
     fig = plt.figure(figsize = (6,6))
     ax = fig.add_subplot(111, projection='3d')
     xs = xyz[:,0]
@@ -377,36 +367,10 @@ if __name__ == '__main__':
     
     plt.show()
 
-    # plot of inelsatic scattering events    
-    plt.hist(coll[:,7], bins=20, range=(1,20))
-    # plot of elsatic scattering events    
-    plt.hist(coll[:,8], bins=20)
-
-#%% 
-# plot all intersections with the boundary
-    data = coll        
-    xyz = data[:,0:3]
-    fig = plt.figure(figsize = (6,3))
-    ax = fig.add_subplot(111, projection='3d')
-    xs = xyz[:,0]
-    ys = xyz[:,1]
-    zs = xyz[:,2]
-    ax.scatter(xs, ys, zs)
-    
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    
-    plt.show()
-
-    # plot of inelsatic scattering events    
-    plt.hist(coll[:,7], bins=20)
-    # plot of inelsatic scattering events    
-    plt.hist(intersections[:,7], bins=20)
 
 #%%
-# this gets the angular distribution of the collected electrons
-    data = coll
+#This plots the angular distribution of the collected electrons
+    data = sim.start_finish[1]
     counts = {}
     old_theta = 0
     for theta in np.arange(0, np.pi/2,np.pi/40):

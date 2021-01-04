@@ -7,15 +7,16 @@ Created on Tue Apr  7 12:23:29 2020
 import numpy as np
 from random import random as rand
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import scipy.linalg
 
 from generate_angle import AngleDist
 
 #%%
 
 class Shape():
+    """A class to represent a shape."""
+    
     def __init__(self):
+        """Construct object."""
         pass
     
     def inside(self, position: np.ndarray) -> bool:
@@ -33,7 +34,7 @@ class Shape():
         """
         pass
     
-    def findIntersect(self, position: np.ndarray, direction:np.ndarray) -> np.ndarray:
+    def getIntersection(self, position: np.ndarray, direction:np.ndarray) -> np.ndarray:
         """Find the intersection between a line and the shape.
         
         The line is defined by a position vector and a direction vector.
@@ -67,7 +68,7 @@ class Shape():
         pass
 
 class Sphere():
-    """ Sphere is a class that represents the simulation environment. 
+    """Sphere is a class that represents the simulation environment.
     
     Electrons
     are generated form a 'source' shape inside of the sphere, and eventually 
@@ -80,15 +81,14 @@ class Sphere():
     x,y,z as outputs, representing the intersection with the sphere.    
     """
     
-    def __init__(self,r):
+    def __init__(self,r:float):
         """Construct the object."""
         self.r = r
         self.theta = AngleDist(kind = 'Theta')
         self.phi = AngleDist(kind = 'Phi')
          
-    def inside(self, position):
-        ''' This checks if a given point is inside of the shape
-        '''
+    def inside(self, position: np.ndarray) -> bool:
+        """Check if a given point is inside of the shape."""
         x = position[0]
         y = position[1]
         z = position[2]
@@ -99,11 +99,12 @@ class Sphere():
             inside = True
         return inside
     
-    def findIntersect(self, position, direction):
-        ''' This function finds the intersection between a line and a shape's
-        surface. The line has a psition and a direction.The function returns
+    def getIntersection(self, position: np.ndarray, direction: np.ndarray) -> np.ndarray:
+        """Find the intersection between a line and the shape.
+        
+        The line has a psition and a direction.The function returns
         the coordinates of the intersection.
-        '''
+        """
         v = direction / np.linalg.norm(direction)
         p = position
         dot = np.dot(v,p)
@@ -113,7 +114,8 @@ class Sphere():
         intersect = p + (v*d)
         return intersect
     
-    def getRandPosition(self):
+    def getRandPosition(self) -> np.ndarray:
+        """Return a random position from inside the shape."""
         theta = self.theta.getAngle()
         phi = self.theta.getAngle()
         r = rand() * self.r
@@ -124,17 +126,25 @@ class Sphere():
         return position
             
 class Disc():
-    ''' The Disc class is used for the shape where electrons are generated and
-    where they are scattered. It is defined by the attributes r (radius in nm)
-    and h (height in nm).
-    It has a method to return a boolean, determining if a point is inside the
-    volums of the disc or not.
-    It has a method to return a random position from inside the volume of the 
-    disc.
-    It has a method that generates a random position from a slice inside of the
-    disc.
-    '''
+    """The Disc class is used as the shape where electrons are generated.
+    
+    It can also be used as the scattering medium. It is defined by the 
+    attributes r (radius in nm) and h (height in nm).
+    """
+    
     def __init__(self, r, h, **kwargs):
+        """Construct object.
+        
+        Parameters:
+        ----------
+            r: float
+                The radius of the Disc in nm
+            h: float
+                The height of the Disc in nm
+            **kwargs: dict
+                center: 1x3 array of floats
+                    The Center coordinates of the Disc.
+        """
         self.r = r
         self.h = h
         if 'center' in kwargs.keys():
@@ -142,9 +152,8 @@ class Disc():
         else:
             self.center = [0,0,0]
         
-    def inside(self, position):
-        ''' This checks if a given point is inside of the shape
-        '''
+    def inside(self, position: np.ndarray) -> bool:
+        """Check if a given position is inside of the shape."""
         x = position[0]
         y = position[1]
         z = position[2]
@@ -157,9 +166,8 @@ class Disc():
             inside = True
         return inside
     
-    def getRandPosition(self):
-        ''' This returns a random position inside the disc
-        '''
+    def getRandPosition(self) -> np.ndarray:
+        """Return a random position inside the shape."""
         theta = rand()*2*np.pi - np.pi
         r = rand() * self.r
         x = r * np.cos(theta)
@@ -167,12 +175,13 @@ class Disc():
         z = rand()*self.h - self.h / 2 + self.center[2]
         return np.array([x,y,z])
     
-    def getSlicePosition(self, depth, height):
-        ''' This function generates a random position inside of a 'slice'
+    def getSlicePosition(self, depth:float, height:float) -> np.ndarray:
+        """Generate a random position inside of a 'slice'.
+        
         The slice represents a part of the Source disc. It has the same radius
         as the Source, but it has its own height and depth below the top 
         surface of the disc.
-        '''
+        """
         theta = rand()*2*np.pi - np.pi
         r = rand() * self.r
         x = r * np.cos(theta)
@@ -180,9 +189,9 @@ class Disc():
         z = rand()*(-height) - depth
         return np.array([x,y,z])
     
-    def findIntersect(self, position, direction):
-        """This finds the intersection point between a line (characterized by
-        a position and a direction), and a disc.
+    def getIntersection(self, position: np.ndarray, direction: np.ndarray) -> np.ndarray:
+        """Find the intersection between a line and the shape.
+
         Parameters
         ----------
         position : 3-by-1 ARRAY of FLOATS
@@ -195,7 +204,6 @@ class Disc():
         intersect : 3-by-1 ARRAY fo FLOATS
             The coordinates where the electron intersects the Disc.
         """
-
         v = direction / np.linalg.norm(direction)
         
         c = [0,0,1]
@@ -243,11 +251,11 @@ class Disc():
 #%%
         
 if __name__ == '__main__':
-    # Instantiate a Disc of radius 5000 and height 100
+    # Plot randomly generated points inside a disc.
     d = Disc(5000,200)  
     d_xyz = []
     for i in range(3500):
-        p = d.findIntersect(d.getRandPosition(),d.getRandPosition())
+        p = d.getIntersection(d.getRandPosition(),d.getRandPosition())
         d_xyz += [p]
     d_xyz = np.array(d_xyz)
     
@@ -264,57 +272,14 @@ if __name__ == '__main__':
     ax.set_zlabel('Z Label')
     
     
-    #%%
-    
-    for i in range(100):
-        d_xyz += [d.getSlicePosition(0.0001,0.01)]
-    d_xyz = np.array(d_xyz) 
-    d_xyz1 = []
-    for i in range(100):
-        d_xyz1 += [d.getSlicePosition(99.9,0.01)]
-    d_xyz1 = np.array(d_xyz1)  
+#%% Plot randomly generated positions on a sphere.
 
-    fig = plt.figure(figsize = (6,6))
-    ax = fig.add_subplot(111, projection='3d')
-    xs = d_xyz[:,0]
-    ys = d_xyz[:,1]
-    zs = d_xyz[:,2]
-    ax.scatter(xs, ys, zs)
-    
-    xs = d_xyz1[:,0]
-    ys = d_xyz1[:,1]
-    zs = d_xyz1[:,2]
-    ax.scatter(xs, ys, zs)
-    
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    
-     
     s = Sphere(7000)
-    s_xyz = []
-    for z in np.arange(-s.r,s.r,s.r/4):
-        s_xyz += s.xy(z)
-        
-    s_xyz = np.array(s_xyz)    
-    #fig = plt.figure()
-    #ax = fig.add_subplot(111, projection='3d')
-    xs = s_xyz[:,0]
-    ys = s_xyz[:,1]
-    zs = s_xyz[:,2]
-    ax.scatter(xs, ys, zs, marker='.')
-    
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    
-    plt.show()
-    
-    
-    #%%
     xyz_int = []
     for i in range(2000):
-        xyz_int += [s.getIntersection([rand()-0.5,rand()-0.5,rand()-0.5])]
+        position = [rand()-0.5,rand()-0.5,rand()-0.5]
+        direction = [rand()-0.5,rand()-0.5,rand()-0.5]
+        xyz_int += [s.getIntersection(position, direction)]
     xyz_int = np.array(xyz_int)
     
     fig = plt.figure(figsize=(10,10))
@@ -324,25 +289,6 @@ if __name__ == '__main__':
     zs = xyz_int[:,2]
     
     ax.scatter(xs,ys,zs, color='orange', marker='.', s=20)
-    
-    ax.set_xlabel('X Label')
-    ax.set_ylabel('Y Label')
-    ax.set_zlabel('Z Label')
-    
-    plt.show()
-    
-    #%%
-    
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    xs = d_xyz[:,0]
-    ys = d_xyz[:,1]
-    zs = d_xyz[:,2]
-    ax.scatter(xs, ys, zs, s=20, marker = '.')
-    xs1 = s_xyz[:,0]
-    ys1 = s_xyz[:,1]
-    zs1 = s_xyz[:,2]
-    ax.scatter(xs1,ys1,zs1, color='orange', marker='.', s=20)
     
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')

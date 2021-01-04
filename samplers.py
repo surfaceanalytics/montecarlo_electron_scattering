@@ -14,7 +14,17 @@ import time
 #%%
 
 class Sampler:
+    """The Sampler is a class for different ways of sampling distributions."""
+    
     def __init__(self, distribution):
+        """Construct object.
+        
+        Parmeters
+        ---------
+            distribution: list
+                A nested list of lists. The upper list contains two items.
+                These are a list of x values and a list of y values.
+        """
         self.distribution = distribution
         
 class Inversion(Sampler):
@@ -28,9 +38,10 @@ class Inversion(Sampler):
     cumulative probability value, gets the index of the value in return,
     and uses the index to retrieve the corresponding observable value.
     """
+    
     def __init__(self, distribution):
+        """Construct the object."""
         super().__init__(distribution)
-        self.distribution.normalize_y()
         self._buildCDF()
                
     def _buildCDF(self):
@@ -41,7 +52,7 @@ class Inversion(Sampler):
             else:
                 self.cumulative_dist = [y]
      
-    def getValue(self):
+    def getValue(self) -> float:
         """Randomly select observable value."""
         r = rand()
         _x = self.cumulative_dist
@@ -53,6 +64,7 @@ class Metropolis(Sampler):
     """A class for using the Metropolis algorithm to return a distribution."""
     
     def __init__(self, distribution):
+        """Construct object."""
         super().__init__(distribution)
         self.max_x = self.distribution.max_x()
         self.min_x = self.distribution.min_x()
@@ -93,10 +105,12 @@ class Metropolis(Sampler):
             return
             
     def run(self, n: int):
+        """Run the algorithm n times."""
         while len(self.values) < n:
             self.metropolis()
             
     def getValue(self) -> float:
+        """Get one value."""
         self.values = []
         self.run(1)
         return self.values[0]
@@ -130,7 +144,7 @@ if __name__ == '__main__':
 
 
     # Test the inversion sampler
-    filename = 'He_loss_fn_medium.csv'  
+    filename = 'He_loss_fn.csv'  
     pdf = LoadedDistribution(filename)
     inv = Inversion(pdf)
 
