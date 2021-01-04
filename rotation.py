@@ -9,25 +9,47 @@ import numpy as np
 from random import random as rand
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+import time
 #%%
 
 def length(vector):
+    """Get the length of a vector."""
     v = vector
     l = np.sqrt(np.sum([i **2 for i in v]))
     return l
 
-def rotate(vector, theta, phi): # Angles should be provided in radians
-    ''' This function takes a velocity vector in some coorindate system. Then
+def rotate(vector: np.ndarray, theta: float, phi:float) -> np.ndarray: # Angles should be provided in radians
+    """Rotate a vector using polar coordinates.
+    
+    This function takes a velocity vector in some coorindate system. Then
     it transforms the coordinate system to a system, where one of the basis 
     vectors is parallel to the velocity vector. Then it rotates the velocity 
     vector in in the xz plane about the y axis. Then it transforms back to the
-    original coordinate system
-    '''
-    v0 = vector # this is the velocity vector
-    temp = [rand(),rand(),rand()] # this generates a random vector that
-    # should not be parallel to v0 (but no guarantees)
-    #temp = np.array([v0[0]+np.abs(1-rand()),v0[1]-np.abs(1-rand()),v0[2]])
+    original coordinate system.
+    
+    Parameters:
+    ----------
+        vector: np.ndarray
+            The vector that will be rotated.
+            Format is [x,y,z]
+        theta: float
+            The polar angle of rtation in radians
+        phi: float
+            The azimuthal angle in radians.
+            
+    Returns:
+        v1: np.ndarray
+            The rotated vector.
+            Format is [x,y,z]    
+    """
+    """This is the velocity vector."""
+    v0 = vector 
+    
+    """This generates a random vector that
+    should not be parallel to v0 (but no guarantees)
+    """
+    temp = [rand(),rand(),rand()]
+    
     u1 = v0 / length(v0)
     u2 = np.cross(u1,temp)
     u2 = u2 / length(u2)
@@ -40,9 +62,11 @@ def rotate(vector, theta, phi): # Angles should be provided in radians
               np.array([np.sin(theta),0,np.cos(theta)])])
     R1 = np.stack([np.array([np.cos(phi),-np.sin(phi),0]),
                    np.array([np.sin(phi),np.cos(phi),0]),
-                   np.array([0,0,1])])      
+                   np.array([0,0,1])])   
+    
+    """This is the rotated vector in the original coordinate system."""
     v1 = np.dot(np.dot(R1,np.dot(R0, np.dot(v0,C))), C_inv)
-    return v1 # this is the rotated vector in the original coordinate system
+    return v1 
 
 #%%
 if __name__ == '__main__':

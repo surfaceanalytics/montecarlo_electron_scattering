@@ -9,10 +9,67 @@ from random import random as rand
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.linalg
+
+from generate_angle import AngleDist
+
 #%%
 
+class Shape():
+    def __init__(self):
+        pass
+    
+    def inside(self, position: np.ndarray) -> bool:
+        """Determine if a point is inside the shape or not.
+        
+        Parameters:
+        ----------
+            position: array-like object 
+                Should have format [x,y,z].
+        Returns:
+        --------
+            inside: bool
+                if True, then point is inside the shape. Otherwise it is outside
+                the shape.
+        """
+        pass
+    
+    def findIntersect(self, position: np.ndarray, direction:np.ndarray) -> np.ndarray:
+        """Find the intersection between a line and the shape.
+        
+        The line is defined by a position vector and a direction vector.
+        The intersection is a position vector.
+        
+        Parameters
+        ----------
+        position : 3-by-1 ARRAY of FLOATS
+            The position vector relative to the center of the boundary.
+        direction : 3-by-1 ARRAY of FLOATS.
+            The velocity vector in the coordinate system of the boundary.
+
+        Returns
+        -------
+        intersect : 3-by-1 ARRAY fo FLOATS
+            The coordinates where the electron intersects the Shape.
+        """
+        pass
+        
+    def getRandPosition(self):
+        """Pick a random position from inside the shape.
+        
+        Parameters:
+        ----------
+            None
+        Returns:
+        -------
+            position: array-like
+                Shape [1x3] with the format [x,y,z].
+        """
+        pass
+
 class Sphere():
-    """ Sphere is a class that represents the simulation environment. Electrons
+    """ Sphere is a class that represents the simulation environment. 
+    
+    Electrons
     are generated form a 'source' shape inside of the sphere, and eventually 
     intersect the sphere during the simulation.
     The Sphere class has a method to generate x and y positions, given a z 
@@ -22,21 +79,13 @@ class Sphere():
     The method takes a vector, that represents direction, as input, and returns
     x,y,z as outputs, representing the intersection with the sphere.    
     """
-    def __init__(self,r):
-        self.r = r
-        
-    def xy(self, z):
-        xyz = []
-        if z**2 <= self.r**2:
-            for theta in np.arange(-np.pi,np.pi,np.pi*2/16):
-                R = np.sqrt((self.r)**2 - z**2)
-                x = R * np.cos(theta)
-                y = R * np.sin(theta)
-                xyz += [[x,y,z]]
-        else:
-            print('z not within sphere')
-        return xyz
     
+    def __init__(self,r):
+        """Construct the object."""
+        self.r = r
+        self.theta = AngleDist(kind = 'Theta')
+        self.phi = AngleDist(kind = 'Phi')
+         
     def inside(self, position):
         ''' This checks if a given point is inside of the shape
         '''
@@ -49,22 +98,6 @@ class Sphere():
         else:
             inside = True
         return inside
-    
-    def getIntersection(self,vector):
-        ''' This finds the intersection point on the shape's surface for a 
-        vectors whose start point is at the center of the shape.
-        '''
-        x = vector[0]
-        y = vector[1]
-        z = vector[2]
-        x_norm = x / (np.sqrt(x**2 + y**2 + z**2))
-        y_norm = y / (np.sqrt(x**2 + y**2 + z**2))
-        z_norm = z / (np.sqrt(x**2 + y**2 + z**2))
-        x_inter = x_norm * self.r
-        y_inter = y_norm * self.r
-        z_inter = z_norm * self.r
-        intersection = np.array([x_inter,y_inter,z_inter])
-        return intersection
     
     def findIntersect(self, position, direction):
         ''' This function finds the intersection between a line and a shape's
@@ -79,6 +112,16 @@ class Sphere():
         d = np.max([d1,d2]) 
         intersect = p + (v*d)
         return intersect
+    
+    def getRandPosition(self):
+        theta = self.theta.getAngle()
+        phi = self.theta.getAngle()
+        r = rand() * self.r
+        x = r * np.sin(theta) * np.cos(phi)
+        y = r * np.sin(theta) * np.sin(phi)
+        z = r * np.cos(theta)
+        position = np.array([x,y,z])
+        return position
             
 class Disc():
     ''' The Disc class is used for the shape where electrons are generated and

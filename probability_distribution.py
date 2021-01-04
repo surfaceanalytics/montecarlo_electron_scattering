@@ -28,7 +28,7 @@ class LoadedDistribution(Distribution):
         loader = CSVLoader()
         self.xy = loader.Load(filename)  
         super().__init__()
-        self.normalize_y()
+        self._construct_CDF()
         
     def get_y(self,x:float) -> float:
         _x = self.xy[0]
@@ -43,14 +43,14 @@ class LoadedDistribution(Distribution):
     def min_x(self):
         return min(self.xy[0])
     
-    def normalize_y(self):
+    def _construct_CDF(self):
         y_sum = 0
         for y in self.xy[1]:
             y_sum += y
         self.xy[1] = [y/y_sum for y in self.xy[1]]
 
 class ManualDistribution(Distribution):
-    """ A class that represents a distribution loaded from a file.
+    """A class that represents a distribution loaded from a file.
     
     The format of the file should be csv, with the first column as x values
     and the second column as y values.
@@ -64,7 +64,7 @@ class ManualDistribution(Distribution):
         """
         self.xy = xy
         super().__init__()
-        self.normalize_y()
+        self._construct_CDF()
         
     def get_y(self, x:float) -> float:
         _x = self.xy[0]
@@ -79,7 +79,8 @@ class ManualDistribution(Distribution):
     def min_x(self):
         return min(self.xy[0])
     
-    def normalize_y(self):
+    def _construct_CDF(self):
+        """Construct the cumulative distribution function."""
         y_sum = 0
         for y in self.xy[1]:
             y_sum += y

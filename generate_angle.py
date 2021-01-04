@@ -11,18 +11,35 @@ from numpy.random import random as rand
 
 #%%
 class AngleDist():
-    ''' This class represents a probability density function for choices of 
-    random angles. Several distributions are possible. One choses the 
-    distribution using the keyword 'kind'
+    """A class for randomly generating angles with some distribution.
+    
+    This class contains a probability density function for 
+    generating random angles. Several distributions are possible. 
+    One choses the distribution using the keyword 'kind'
     Options are: 'Cauchy', 'Gaussian', 'Phi', 'Theta', 'Contant'
-    and 'Rutherford'
+    and 'Rutherford'.
     Each distribution has the method 'getAngle()', which returns an angle in
     raidans.
     Some distributions take  attitional arguments. For example, 'Cauchy' and 
     'Gaussian' take 'width' as a keyword argument. 'Rutherford' takes 'energy',
     'Z' and 'param' as keyword arguments.
-    '''
+    """
+    
     def __init__(self, **kwargs):
+        """Construct the AngleDist object.
+        
+        Parameters:
+        ----------
+            **kwargs:
+                'width': float
+                    An argument defining the angluar spread of the distribution.
+                    This argument is only used if the distribution is 'Cauchy' or
+                    'Gaussian'.
+                'kind': str
+                    The kind of angle distribution.
+                    One of ['Cauchy', 'Gaussian', 'Phi', 'Theta', 'Constant',
+                            'Rutherford', 'Lambert']
+        """
         if 'width' in kwargs.keys():
             self.width = kwargs['width']
         else:
@@ -52,72 +69,159 @@ class AngleDist():
                 self.kind = 'Lambert'
                     
     def getAngle(self, *args):
+        """Return a random angle, in radians.
+                
+        Parameters:
+        ----------
+            *args
+        Returns:
+        -------
+            anlge: float
+        """ 
         return self.distribution.getAngle(*args)
 
 class Cauchy:
+    """A class fo generating random angles with a Cauchy disribution."""
     
     def __init__(self, **kwargs):
+        """Construct a Cauchy object.
+        
+        Parameters:
+        ----------
+            **kwargs:
+                width: float
+                    The width of the distribution.
+        """
         if 'width' in kwargs.keys():
             self.width = kwargs['width']
         else:
             self.width = 0.1
         
     def getAngle(self):
-        ''' returns a random angle, in degrees, following
-        a Lorentzian (Cauchy) distribution'''
+        """Return a random angle, in radians.
+                
+        Parameters:
+        ----------
+            None
+        Returns:
+        -------
+            anlge: float
+        """ 
         angle = np.abs(cauchy(1)*self.width)
-        #if angle > np.pi:
-        #    angle = self.getAngle()
         return angle[0]
 
 class Gaussian:
+    """A class fo generating random angles with a Gaussian disribution."""
+    
     def __init__(self, width):
+        """Construct a Gaussian object.
+        
+        Parameters:
+        ----------
+            **kwargs:
+                width: float
+                    The width of the distribution.
+        """
         self.width = width
         
     def getAngle(self):
+        """Return a random angle, in radians.
+                
+        Parameters:
+        ----------
+            None
+        Returns:
+        -------
+            anlge: float
+        """
         return np.random.normal(0,self.width)
     
 class Phi:
-    ''' This class returns an azimuthal angle from a uniform distribution.
-    '''
+    """The Phi class returns an azimuthal angle from a uniform distribution."""
+    
     def __init__(self):
+        """Construct the object."""
         pass
     
     def getAngle(self):
+        """Return a random angle, in radians.
+                
+        Parameters:
+        ----------
+            None
+        Returns:
+        -------
+            anlge: float
+        """
         return  rand() * 2 * np.pi
     
 class Theta:
-    ''' This class represents a polar angle using a distribution function
-    that is uniform over the surface of a sphere.
-    '''
+    """The Theta class returns a random polar angle.
+    
+    The distribution generates ploints that are uniform over the surface of a 
+    sphere.
+    """
+    
     def __init__(self):
+        """Construct the object."""
         pass
 
     def getAngle(self):
-        return np.arccos(1-2*rand())# rand() * np.pi
+        """Return a random angle, in radians.
+        
+        Parameters:
+        ----------
+            None
+        Returns:
+        -------
+            anlge: float
+        """
+        return np.arccos(1-2*rand())
 
 class Constant:
-    ''' This class represents an angular distribution, where the angle does 
-    not change
-    '''
+    """The Constant class returns a constant number.
+    
+    This distributions represent a cases where the angle does not change.
+    """
+    
     def __init__(self):
+        """Construct object."""
         pass
     
     def getAngle(self):
+        """Return a constant angle, in radians.
+        
+        Parameters:
+        ----------
+            None
+        Returns:
+        -------
+            anlge: float
+        """
         return 0
     
 class Rutherford:
-    ''' This class represents a probability density function for the Rutherford
-    scattering profile.
+    """The Rutherford class returns a random angle from the Rutherford distribution.
+
     It returns the a random polar angle in radians.
-    It takes three keyword arguments: 
-        1) 'energy' represents the electron's kinetic energyy in eV
-        2) 'Z', represents the atomic number of the scattering medium
-        3) 'param' represents a parameter that changes the width of the 
-        distribution. Smaller 'param' leads to narrower distributions. With 
-        larger 'param' the distribution converges to the cosin distribution.
-    '''
+    """
+    
     def __init__(self, **kwargs):
+        """Construct the object.
+        
+        Parameters:
+        ----------
+            **kwargs:
+                energy: float
+                    The kinetic energy of the scattered electron in eV.
+                Z: float
+                    The atomic number of the scattering medium
+                param: float
+                    A parameter that changes the width of the 
+                    distribution. Smaller 'param' leads to narrower distributions. 
+                    With larger values the distribution converges to the cosin 
+                    distribution.
+        """
         if 'energy' in kwargs.keys():
             self.energy = kwargs['energy']
         else: 
@@ -131,16 +235,25 @@ class Rutherford:
         else:
             self.param = 0.1
             
-        self.beta = self.beta(self.energy, self.Z, self.param)
+        self.beta = self._beta(self.energy, self.Z, self.param)
 
     def getAngle(self):
+        """Return a random angle in radians.
+        
+        Parameters:
+        ----------
+            None
+        Returns:
+        -------
+            anlge: float
+        """
         r = rand()
-        #angle = np.arccos(1-(2*self.beta*r/(1+self.beta - r)))
         angle = np.arccos((-1-self.beta+r+2*self.beta*r)/(-1-self.beta+r))
         return angle
         
-    def beta(self, energy, Z, param):
-        '''
+    def _beta(self, energy, Z, param):
+        """Generate the beta parameter.
+        
         m = 9.10938E-31 # mass of electron in kg
         eV = 1.602176634E-19 # energy of 1 eV in J
         v = np.sqrt(2*eV*energy/m) # velocity of electron in m/s
@@ -148,18 +261,42 @@ class Rutherford:
         p = m*v # momentum in kg m/s
         lambda0 = Z**(1/3) / (0.885*a0)
         h = 6.62607E-34 # Planck constant in J s
-        beta = 1/4 * (param * h * lambda0 / p)'''
+        beta = 1/4 * (param * h * lambda0 / p)
+        
+        Parameters:
+        ----------
+            energy: float
+                The kinetic energy of the scattered electron in eV.
+            Z: float
+                The atomic number of the scatterer
+            param: float
+                A parameter for determining the width of the distribution
+        Returns:
+            beta: float
+        """
         beta = param * 5.43 * (Z**(2/3))/energy
         return beta
     
 class Lambert:
-    ''' This class represents a probability density function for Lambertian
-    emission.
-    '''
+    """The Lambert class returns a random angle from the Lambert distribution.
+
+    It returns the a random polar angle in radians.
+    """
+    
     def __init__(self, **kwargs):
+        """Construct Lambert object."""
         return
 
     def getAngle(self):
+        """Return a random angle in radians.
+        
+        Parameters:
+        ----------
+            None
+        Returns:
+        -------
+            anlge: float
+        """
         r = rand()
         angle = np.arccos(np.sqrt(1-r))
         return angle
