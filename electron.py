@@ -4,16 +4,9 @@ Created on Tue Apr  7 13:47:27 2020
 
 @author: Mark
 """
-
 import numpy as np
 import matplotlib.pyplot as plt
 from shapes import Disc
-from generate_angle import AngleDist
-from source import Source
-from numpy.random import random as rand
-
-
-#%%
 
 class Electron():
     def __init__(self, source, **kwargs):
