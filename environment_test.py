@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jan  4 14:35:42 2021
+Created on Mon Jan  4 16:57:44 2021
 
 @author: Mark
 """
@@ -17,8 +17,12 @@ sim = GasPhaseSimulation(sample_nozzle_distance = 500000,
                       source_diameter = 900000,
                       initial_KE = 1100,
                       loss_function = loss_function) 
-sim.simulateMany(10000, 'start finish')
+sim.simulateMany(1000, 'start finish')
 results = sim.start_finish
+
+print(len(results))
+
+print(sim.scatterer.getIMFP(1100))
 
 #%% Do the analysis
 
@@ -54,30 +58,3 @@ avg = A.getAveragePathLength()
 
 R = A.results
 S = A.selection
-     
-#%%
-#Write a summary of the results to an Excel file
-A.writeExcel('nozz300um, dist300um, 25mbar, ang22deg, 1Me')
-    
-#%%
-#This cell is to run several simulations while changing the sample-nozzle distance
-averages = {}
-count = 0
-for r in range(25000,1000000,25000):
-    print(count)
-    nozzle_diameter = 1000000
-    nozzle_radius = nozzle_diameter / 2
-    sim = GasPhaseSimulation(sample_nozzle_distance = r, 
-                             source_diameter = 300000, pressure=10)
-    sim.simulateMany(40000, 'start finish')
-    results = sim.start_finish
-    A = Analysis(results)
-    A.pathHistogram('show',bins=25, accept_angle = 20, 
-                    accept_radius = nozzle_radius)
-    averages[r] = A.getAveragePathLength()
-    count+=1
-    
-norm_path = [v/k for k,v in averages.items()]
-
-plt.plot([k for k in averages.keys()], norm_path)
-    

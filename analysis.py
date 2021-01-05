@@ -4,14 +4,8 @@ Created on Thu Apr 23 16:49:49 2020
 
 @author: Mark
 """
-from simulation import Simulation
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from generate_angle import AngleDist
-from matplotlib import cm
-import pickle
-from shapes import Sphere
 import xlsxwriter
 
 #%%

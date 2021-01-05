@@ -1,0 +1,19 @@
+certifi==2020.12.5
+cycler==0.10.0
+dill @ file:///home/conda/feedstock_root/build_artifacts/dill_1604312823872/work
+kiwisolver @ file:///D:/bld/kiwisolver_1604322487664/work
+matplotlib @ file:///D:/bld/matplotlib-suite_1605180431619/work
+multiprocess @ file:///D:/bld/multiprocess_1604743534752/work
+numpy @ file:///D:/bld/numpy_1604946253620/work
+olefile @ file:///home/conda/feedstock_root/build_artifacts/olefile_1602866521163/work
+Pillow @ file:///D:/bld/pillow_1609628021885/work
+pyparsing==2.4.7
+PyQt5==5.12.3
+PyQt5-sip==4.19.18
+PyQtChart==5.12
+PyQtWebEngine==5.12.1
+python-dateutil==2.8.1
+six @ file:///home/conda/feedstock_root/build_artifacts/six_1590081179328/work
+tornado @ file:///D:/bld/tornado_1604105205494/work
+wincertstore==0.2
+XlsxWriter @ file:///home/conda/feedstock_root/build_artifacts/xlsxwriter_1602583799765/work
