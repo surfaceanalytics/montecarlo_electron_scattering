@@ -9,18 +9,27 @@ import matplotlib.pyplot as plt
 from shapes import Disc
 
 class Electron():
+    """The Electron class represents an electron in the simultation.
+        
+    Its main properties are stored inside the attribute called 'vector'.
+    Vector is an array to store all the electron's info.
+    - the first three elements [0:3] are the x,y,z positions
+    - the next three [3:6] are the x, y and z velocities,
+    - the next one is time [6]
+    - the next one is number of times inelastically scattered [7]
+    - the next one is number of time elastically scattered [8]
+    The electron needs a Source as an argument, because the electrons need
+    to be generated within the volume of the Source.
+    """
+    
     def __init__(self, source, **kwargs):
-        ''' The Electron class represents an electron in the simultation. Its
-        main properties are stored inside the attribute called 'vector'.
-        Vector is an array to store all the electron's info.
-        - the first three elements [0:3] are the x,y,z positions
-        - the next three [3:6] are the x, y and z velocities,
-        - the next one is time [6]
-        - the next one is number of times inelastically scattered [7]
-        - the next one is number of time elastically scattered [8]
-        The electron needs a Source as an argument, because the electrons need
-        to be generated within the volume of the Source.
-        '''
+        """Construct the object.
+        
+        Parameters:
+        ----------
+            source: Shape object
+                The Shape in which the electrons are generated.
+        """
         self.mass = 9.109383E-31 # the electron mass in kg
         self.J_eV = 1.602176E-19 # conversion of eV to Joules. has units J/eV
         self.vector = np.zeros((9))
@@ -33,28 +42,42 @@ class Electron():
         self.initCoords()
         self.initVelocity()
 
-    def _convertKinEnToSpeed(self, kinetic_energy):
-        ''' This function sets the speed of an electron (returned in nm/s) 
+    def _convertKinEnToSpeed(self, kinetic_energy: float) -> float:
+        """Convert the kinetic energy into speed.
+        
+        This function sets the speed of an electron (returned in nm/s) 
         using kinetic energy as input (units of eV). It uses the constants 
         1.602E-19 Joules per eV and the mass of the electron 9.109E-31 kg.
-        '''
+        
+        Parameters:
+        ----------
+            kinetic_energy: float
+                The kinetic energy of the electron in eV.
+        
+        Returns:
+        -------
+            speed: float
+                The speed of the electron in nm/s
+        """
         speed = 1E+9 * np.sqrt(2 * kinetic_energy * 
                                      self.J_eV / self.mass)
         return speed
         
     def initCoords(self, *args):
-        ''' This function gets random x,y,z coordinates from a slice
-        of the Source disc. 
-        '''
+        """Initialize the coordinates.
+        
+        This function gets random x,y,z coordinates from inside the source. 
+        """
         self.vector[0:3] = self.source.getRandPosition()
         #self.vector[0:3] = self.source.getSlicePosition(*args)
         
     def initVelocity(self):
-        ''' This  function initializes the electron's velocity. It uses the 
+        """Initialize the velocity.
+        
+        This  function initializes the electron's velocity. It uses the 
         electron's speed, and generates random polar and azimuthal angles.
         Polar angle is theta, and asimuthal is phi.
-        '''
-        
+        """
         KE = self.source.getKE()
         self.kinetic_energy = KE
         initial_speed = self._convertKinEnToSpeed(KE)
@@ -66,6 +89,12 @@ class Electron():
         self.vector[3:6] = np.array([vx,vy,vz])
         
     def updateKineticEnergy(self, delta_KE):
+        """Update the kinetic energy.
+        
+        Parameters:
+            delta_KE: float
+                The amount by which the kinetic energy has changed.
+        """
         new_KE = self.kineticEnergy() - delta_KE
         if new_KE < 0:
             self.kinetic_energy = 0
@@ -74,12 +103,14 @@ class Electron():
         self.changeSpeed()
         
     def changeSpeed(self):
-        ''' This fuction is used to change the electron's speed when an
+        """Update the electron's speed.
+        
+        This fuction is used to change the electron's speed when an
         inelastic scattering event occurs. It takes the argument delta_KE,
         which represents the absolute value of kinetic energy the electron lost
         in the procees (units of eV). It returns a new velocity vector in units
         of m/s.
-        '''
+        """
         old_v = self.vector[3:6]
   
         speed = 1E+9 * np.sqrt(2 * self.kinetic_energy * 
@@ -89,19 +120,14 @@ class Electron():
      
         self.vector[3:6] = new_v
         
-    def kineticEnergy(self):
-        '''This method returns kinetic energy in eV
-        '''
+    def kineticEnergy(self) -> float:
+        """Get the kinetic energy in eV."""
         speed = np.linalg.norm(self.vector[3:6]) / 1E+9 # here the speed needs
         # to be converted from nm/s to m/s
         KE = (1/2 * self.mass * speed**2) / self.J_eV
         return KE
         
-        
-#%%
-''' This is to check the initial velocity distributions of the generated 
-electrons.
-'''
+#%% Check the initial velocity distributions of the generated electrons.
 
 if __name__ == '__main__':
     source = Disc(100,1)
@@ -127,8 +153,7 @@ if __name__ == '__main__':
     
     plt.show()        
 
-#%%
-''' This cell is to check if kinetic energy conversion is working'''
+#%% Check if kinetic energy conversion is working
 
 if __name__ == '__main__':
     source = Disc(100,1) # create a source for the electrons
