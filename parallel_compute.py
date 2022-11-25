@@ -19,11 +19,9 @@ def runOnce():
                   source_thickness = 30)
     sim.simulateMany(1000, 'start finish')
     return sim.start_finish
-    
-    
+
+
 if __name__ == '__main__':
     pool = multiprocessing.Pool(processes=2)
-    
-    result = [pool.apply(runOnce, for i in range(2)]
-                         print
 
+    result = [pool.apply(runOnce) for i in range(2)]
