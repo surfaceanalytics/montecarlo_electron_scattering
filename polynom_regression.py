@@ -4,10 +4,15 @@ Created on Mon Dec 14 17:13:41 2020
 
 @author: Mark
 """
-from gas_phase_sim import GasPhaseSimulation
-from analysis import Analysis
+import os
+import pathlib
+os.chdir(pathlib.Path(__file__).parent)
+
 import numpy as np
 import matplotlib.pyplot as plt
+
+from montecarlo.simulation import GasPhaseSimulation
+from analysis import Analysis
 
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression

@@ -4,10 +4,14 @@ Created on Thu Dec 10 10:10:53 2020
 
 @author: Mark
 """
-import collections
-import multiprocessing
-from solid_state_sim import SolidStateSimulation
+import os
+import pathlib
+os.chdir(pathlib.Path(__file__).parent)
 
+import multiprocessing
+from montecarlo.simulation import SolidStateSimulation
+
+# %%
 loss_function = 'Ag_loss_fn.csv'
 def runOnce():
     sim = SolidStateSimulation(sample_nozzle_distance = 300000,
