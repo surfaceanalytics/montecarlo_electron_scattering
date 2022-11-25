@@ -128,8 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-#data
-/data
-
 #old unused scripts
 /unused
